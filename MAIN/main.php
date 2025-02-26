@@ -10,7 +10,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-white">
         <div class="container">
-            <a class="navbar-brand" href="#">GroWise</a>
+            <a class="navbar-brand" href="../MAIN/main.php">GroWise</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -33,7 +33,7 @@
     <section class="hero-section">
         <div class="container">
             <h1 class="display-4 fw-bold mb-4">Empowering Small Enterprises with Digital Solutions</h1>
-            <p class="lead mb-4">A comprehensive management system aligned with SDG 9: Industry, Innovation, and Infrastructure</p>
+            <p class="lead mb-4">Powering small businesses with big solutions for seamless growth.</p>
             <a href="#" class="get-started-btn">Get Started</a>
         </div>
     </section>
@@ -43,13 +43,22 @@
         <h2 class="text-center mb-5">Key Features</h2>
         <div class="row">
             <div class="col-md-4">
-                <div class="feature-card"></div>
+                <div class="feature-card">
+                    <h1>isip kayo!!</h1>
+                    <p>mag isip kayo magandang ilagay sa key features hehe lab u all</p>
+                </div>
             </div>
             <div class="col-md-4">
-                <div class="feature-card"></div>
+                <div class="feature-card">
+                <h1>isip kayo!!</h1>
+                <p>mag isip kayo magandang ilagay sa key features hehe lab u all</p>
+                </div>
             </div>
             <div class="col-md-4">
-                <div class="feature-card"></div>
+                <div class="feature-card">
+                <h1>isip kayo!!</h1>
+                <p>mag isip kayo magandang ilagay sa key features hehe lab u all</p>
+                </div>
             </div>
         </div>
     </section>
