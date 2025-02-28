@@ -34,13 +34,15 @@
         <div class="container">
             <h1 class="display-4 fw-bold mb-4">Empowering Small Enterprises with Digital Solutions</h1>
             <p class="lead mb-4">Powering small businesses with big solutions for seamless growth.</p>
-            <a href="#" class="get-started-btn">Get Started</a>
+            <a href="#" class="empowerment-btn">
+                Get Started 
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ms-2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </a>
         </div>
     </section>
 
-    <!-- Features Section -->
     <section class="container my-5">
-        <h2 class="text-center mb-5">Key Features</h2>
+        <h2 class="keyFeatures mb-5">Key Features</h2>
         <div class="row">
             <div class="col-md-4">
                 <div class="feature-card">
@@ -62,6 +64,41 @@
             </div>
         </div>
     </section>
+
+    <section class="success-section">
+        <div class="container py-5">
+            <h2 class="text-center display-6 fw-bold mb-5">Success Story</h2>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="success-card">
+                        <p>content for success story</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="success-card">
+                        <p>content for success story</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="containers">
+            <div class="footer-left">
+                <h4>Digital Business Hub</h4>
+                <p>Empowering small enterprises worldwide</p>
+            </div>
+            <div class="footer-right">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Contact Us</a>
+            </div>
+        </div>
+        <div class="copyright">
+            © 2025 Digital Business Hub. All rights reserved.
+        </div>
+    </footer>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
