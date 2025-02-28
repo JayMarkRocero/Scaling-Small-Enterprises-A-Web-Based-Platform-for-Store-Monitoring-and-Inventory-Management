@@ -24,11 +24,16 @@
     transform: scaleX(1);
 }
 
-
 .hero-section {
     background-color: #0000FF;
     color: white;
     padding: 80px 0;
+    text-align: center;
+}
+
+.keyFeatures {
+    font-size: 40px;
+    font-weight: bold;
     text-align: center;
 }
 
@@ -38,6 +43,7 @@
     height: 200px;
     margin-bottom: 20px;
     box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
 }
 
 .feature-card h1 {
@@ -48,23 +54,99 @@
     text-align: center;
 }
 
+.feature-card:hover {
+    transform: translateY(-5px);
+}
+
 .navbar-brand {
     font-size: 2rem;
     font-weight: bold;
 }
 
-.get-started-btn {
+.empowerment-btn {
     background-color: white;
     color: #0000FF;
-    padding: 10px 30px;
-    border-radius: 25px;
+    padding: 15px 30px;
+    border-radius: 50px;
     text-decoration: none;
-    display: inline-block;
-    margin-top: 20px;
+    display: inline-flex;
+    align-items: center;
     font-weight: bold;
+    transition: all 0.3s ease;
 }
 
-.get-started-btn:hover {
+.empowerment-btn:hover {
     background-color: #f8f9fa;
     color: #0000FF;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.success-section {
+    background-color: white;
+    padding: -30px;
+}
+
+.success-card {
+    background-color: white;
+    border-radius: 20px;
+    height: 200px;
+    transition: transform 0.3s ease;
+    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.success-card:hover {
+    transform: translateY(-5px);
+}
+
+.footer {
+    background-color: #2D1B17;
+    color: white;
+    padding: 20px 0;
+    text-align: center;
+}
+
+.containers {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: auto;
+    padding: 0 20px;
+}
+
+.footer-left h4 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.footer-left p {
+    margin: 0;
+    color: #aaa;
+}
+
+.footer-right a {
+    color: white;
+    text-decoration: none;
+    margin-left: 15px;
+}
+
+.footer-right a:hover {
+    text-decoration: underline;
+}
+
+.copyright {
+    text-align: center;
+    margin-top: 10px;
+    color: #aaa;
+}
+
+@media (max-width: 768px) {
+    .empowerment-section {
+        padding: 40px 0;
+    }
+    
+    .success-card {
+        height: 150px;
+    }
 }
