@@ -23,8 +23,8 @@
                         <a class="nav-link" href="#">About</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Login/Logout</a>
-                    </li>
+                    <a class="nav-link" href="<?php echo isset($_SESSION['username']) ? 'logout.php' : 'login.php'; ?>">
+                    <?php echo isset($_SESSION['username']) ? 'Logout' : 'Login'; ?>
                 </ul>
             </div>
         </div>
