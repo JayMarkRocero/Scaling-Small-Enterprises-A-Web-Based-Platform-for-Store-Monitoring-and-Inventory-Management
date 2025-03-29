@@ -20,16 +20,24 @@ if ($conn->connect_error) {
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Admin Dashboard</title>
+    <title>Add New User</title>
 </head>
 <body>
-    <h1>Welcome Admin</h1>
-    <h2>User Management</h2>
-    <h2>Categories</h2>
-    <h2>Products</h2>
-    <h2>Sales</h2>
-    <h2>Sales Report</h2>
-    <a href="logout.php">Logout</a>
+
+<!-- Sidebar Menu -->
+<table border="1" width="20%" cellspacing="0" cellpadding="5" style="float: left; height: 100vh;">
+    <tr>
+        <td><b>INVENTORY SYSTEM</b></td>
+    </tr>
+    <tr><td><a href="../ADMINDASHB/dashboard.php">Dashboard</a></td></tr>
+    <tr><td><a href="../ADMINDASHB/usermanagement.php">User Management</a></td></tr>
+    <tr><td><a href="../ADMINDASHB/categories.php">Categories</a></td></tr>
+    <tr><td><a href="../ADMINDASHB/product.php">Products</a></td></tr>
+    <tr><td><a href="#">Media Files</a></td></tr>
+    <tr><td><a href="#">Sales</a></td></tr>
+    <tr><td><a href="#">Sales Report</a></td></tr>
+    <tr><td><a href="../LOGIN/logout.php">Logout</a></td></tr>
+</table>
 </body>
 </html>
 
