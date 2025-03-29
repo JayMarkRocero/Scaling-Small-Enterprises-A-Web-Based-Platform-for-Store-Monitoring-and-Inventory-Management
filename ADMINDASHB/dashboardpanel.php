@@ -31,8 +31,8 @@ if ($conn->connect_error) {
     </tr>
     <tr><td><a href="../ADMINDASHB/dashboard.php">Dashboard</a></td></tr>
     <tr><td><a href="../ADMINDASHB/usermanagement.php">User Management</a></td></tr>
-    <tr><td><a href="#">Categories</a></td></tr>
-    <tr><td><a href="#">Products</a></td></tr>
+    <tr><td><a href="../ADMINDASHB/categories.php">Categories</a></td></tr>
+    <tr><td><a href="../ADMINDASHB/product.php">Products</a></td></tr>
     <tr><td><a href="#">Media Files</a></td></tr>
     <tr><td><a href="#">Sales</a></td></tr>
     <tr><td><a href="#">Sales Report</a></td></tr>
