@@ -20,12 +20,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($username === 'admin' && $password === 'admin123') {
         $_SESSION['username'] = 'admin';
         $_SESSION['role'] = 'admin';
-        header("Location: admin_dashboard.php");
+        header("Location: ../ADMINDASHB/dashboardpanel.php");
         exit();
     }
 
     // Fetch user from database
-    $stmt = $conn->prepare("SELECT password, role FROM users WHERE username = ?");
+    $stmt = $conn->prepare("SELECT password_hash, user_role FROM users WHERE username = ?");
     $stmt->bind_param("s", $username);
     $stmt->execute();
     $stmt->store_result();
@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (password_verify($password, $hashed_password)) {
         $_SESSION['username'] = $username;
         $_SESSION['role'] = $role;
-        header("Location: " . ($role == 'admin' ? 'admin_dashboard.php' : 'staff_dashboard.php'));
+        header("Location: " . ($role == 'admin' ? '../ADMINDASHB/dashboardpanel.php' : 'staff_dashboard.php'));
         exit();
     } else {
         $error = "Invalid username or password.";
@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <table border="1" cellpadding="10" cellspacing="0">
                 <tr>
                     <td align="center">
-                        <h1>LogIn Panel</h1>
+                        <h1>Login Panel</h1>
                         <p>Inventory Management System</p>
                         <form method="POST" action="">
                             <input type="text" name="username" placeholder="Username" required>
