@@ -9,14 +9,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $username = $_POST['username'];
     $password = $_POST['password'];
 
-    // Database connection
     $conn = new mysqli('localhost', 'root', '', 'inventory_database');
 
     if ($conn->connect_error) {
         die("Connection failed: " . $conn->connect_error);
     }
 
-    // wala to ha need dapat lahat ng admin makapag login sa umpisa 
     if ($username === 'admin' && $password === 'admin123') {
         $_SESSION['username'] = 'admin';
         $_SESSION['role'] = 'admin';
@@ -25,22 +23,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     // Fetch user from database
-    $stmt = $conn->prepare("SELECT password_hash, user_role FROM users WHERE username = ?");
+    $stmt = $conn->prepare("SELECT password_hash, role_id FROM users WHERE username = ?");
     $stmt->bind_param("s", $username);
     $stmt->execute();
     $stmt->store_result();
-    $stmt->bind_result($hashed_password, $role);
-    $stmt->fetch();
 
-    if (password_verify($password, $hashed_password)) {
-        $_SESSION['username'] = $username;
-        $_SESSION['role'] = $role;
-        header("Location: " . ($role == 'admin' ? '../ADMINDASHB/dashboardpanel.php' : 'staff_dashboard.php'));
-        exit();
-    } else {
-        $error = "Invalid username or password.";
+    // If user exists
+    if ($stmt->num_rows > 0) {
+        $stmt->bind_result($hashed_password, $role_id);
+        $stmt->fetch();
+
+        if (password_verify($password, $hashed_password)) {
+            $_SESSION['username'] = $username;
+            $_SESSION['role'] = ($role_id == 1) ? 'admin' : 'staff';
+            header("Location: " . ($_SESSION['role'] == 'admin' ? '../ADMINDASHB/dashboardpanel.php' : 'staff_dashboard.php'));
+            exit();
+        }
     }
 
+    $error = "Invalid username or password.";
     $stmt->close();
     $conn->close();
 }
