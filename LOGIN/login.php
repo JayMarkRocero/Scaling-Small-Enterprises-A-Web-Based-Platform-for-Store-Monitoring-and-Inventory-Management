@@ -48,7 +48,7 @@ class Auth {
     }
 
     private function redirectUser($role) {
-        $location = ($role == 'admin') ? '../ADMINDASHB/dashboardpanel.php' : 'staff_dashboard.php';
+        $location = ($role == 'admin') ? '../ADMINDASHB/dashboard.php' : 'staff_dashboard.php';
         header("Location: $location");
         exit();
     }
