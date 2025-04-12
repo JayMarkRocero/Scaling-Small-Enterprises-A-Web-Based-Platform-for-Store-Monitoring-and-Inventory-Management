@@ -1,5 +1,8 @@
 <?php
 include '../DATABASE/db.php';
+include 'User.php';
+
+$user = new User($conn);
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $full_name = $_POST['full_name'];
@@ -7,32 +10,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $password = $_POST['password'];
     $user_role = $_POST['user_role']; 
 
-    // Check if the username already exists
-    $checkStmt = $conn->prepare("SELECT username FROM users WHERE username = ?");
-    $checkStmt->bind_param("s", $username);
-    $checkStmt->execute();
-    $checkStmt->store_result();
-
-    if ($checkStmt->num_rows > 0) {
+    if ($user->usernameExists($username)) {
         echo "<p style='color: red;'>Error: Username already exists. Please choose a different username.</p>";
     } else {
-        // Hash the password before storing it
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-
-        // Call the stored procedure with the hashed password
-        $stmt = $conn->prepare("CALL AddUser(?, ?, ?, ?)");
-        $stmt->bind_param("sssi", $full_name, $username, $hashed_password, $user_role); // Fixed: Use hashed password
-
-        if ($stmt->execute()) {
+        if ($user->addUser($full_name, $username, $password, $user_role)) {
             echo "<p style='color: green;'>User added successfully.</p>";
         } else {
-            echo "<p style='color: red;'>Error adding user: " . $stmt->error . "</p>";
+            echo "<p style='color: red;'>Error adding user.</p>";
         }
-
-        $stmt->close();
     }
 
-    $checkStmt->close();
     $conn->close();
 }
 ?>
