@@ -1,5 +1,25 @@
 <?php
-include '../DATABASE/db.php';
+// Connect to the database
+include '../DATABASE/db.php'; // Make sure this file correctly initializes $conn
+
+function getUserCount() {
+    global $conn;
+
+    $userCount = 0;
+
+    // Call the stored procedure
+    $conn->query("CALL GetUserCount(@userCount)");
+    $result = $conn->query("SELECT @userCount AS userCount");
+
+    if ($result && $row = $result->fetch_assoc()) {
+        $userCount = $row['userCount'];
+    }
+
+    return $userCount;
+}
+
+// Call the function to get the user count
+$totalUsers = getUserCount();
 ?>
 
 <!DOCTYPE html>
@@ -7,7 +27,7 @@ include '../DATABASE/db.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product</title>
+    <title>Dashboard</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
@@ -104,6 +124,16 @@ include '../DATABASE/db.php';
                     </a>
                 </li>
             </ul>
-        </div>
+    </div>
 
-<?php $conn->close(); ?>
+<!-- Main Content Area -->
+<div style="margin-left: 21%; padding: 20px;">
+    <h1>Dashboard</h1>
+    <p>Total Users: <?php echo $totalUsers; ?></p>
+</div>
+
+</body>
+</html>
+
+
+
