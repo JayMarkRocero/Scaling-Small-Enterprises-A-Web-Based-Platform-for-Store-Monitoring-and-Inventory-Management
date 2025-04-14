@@ -7,7 +7,7 @@ global $conn;
 
 $userCount = 0;
 
-// Call the stored procedure
+// Call the stored procedure for total user
 $conn->query ("CALL GetUserCount(@userCount)");
 $result = $conn->query("SELECT @userCount AS userCount");
 
@@ -17,9 +17,25 @@ $userCount = $row['userCount'];
 
 return $userCount;
 }
+function getTotalProducts() {
+    global $conn;
+
+    $totalProducts = 0;
+
+    // Call the stored procedure for total products
+    $conn->query("CALL GetTotalProducts(@totalProducts)");
+    $result = $conn->query("SELECT @totalProducts AS totalProducts");
+
+    if ($result && $row = $result->fetch_assoc()) {
+        $totalProducts = $row['totalProducts'];
+    }
+
+    return $totalProducts;
+}
 
 // Call the function to get the user count
 $totalUsers = getUserCount();
+$totalProducts = getTotalProducts();
 ?>
 
 <!DOCTYPE html>
@@ -120,13 +136,29 @@ INVENTORY SYSTEM
 
 <!-- Main Content Area -->
 <div class="col-md-9 ms-sm-auto col-lg-10 px-md-4 content">
-<h1>Dashboard</h1>
-<p>Total Users: <?php echo $totalUsers; ?></p>
-</div>
-</div>
-</div>
+  <h1 class="mb-3">Dashboard</h1>
 
-</body>
-</html>
+  <div class="row g-3">
+    
+    <div class="col-md-6">
+      <div class="card bg-primary text-white" style="height: 130px; display: flex; justify-content: center; align-items: center;">
+        <div class="text-center">
+          <i class="bi bi-people-fill fs-4 d-block mb-1"></i>
+          <div class="card-title mb-0" style="font-size: 0.95rem;">Total Users</div>
+          <div class="card-text" style="font-size: 1.05rem;"><?php echo $totalUsers; ?></div>
+        </div>
+      </div>
+    </div>
 
+    <div class="col-md-6">
+      <div class="card bg-success text-white" style="height: 130px; display: flex; justify-content: center; align-items: center;">
+        <div class="text-center">
+          <i class="bi bi-box-seam fs-4 d-block mb-1"></i>
+          <div class="card-title mb-0" style="font-size: 0.95rem;">Total Products</div>
+          <div class="card-text" style="font-size: 1.05rem;"><?php echo $totalProducts; ?></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
