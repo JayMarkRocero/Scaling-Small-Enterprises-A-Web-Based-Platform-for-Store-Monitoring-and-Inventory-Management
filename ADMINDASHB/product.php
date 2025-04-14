@@ -6,7 +6,7 @@ $alert = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_product'])) {
-        $stmt = $conn->prepare("INSERT INTO products (product_name, category_id, stock_quantity, price, expiration_date, manufacturer) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt = $conn->prepare ("INSERT INTO products (product_name, category_id, stock_quantity, price, expiration_date, manufacturer) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->bind_param("siidss", $_POST['product_name'], $_POST['category_id'], $_POST['stock_quantity'], $_POST['price'], $_POST['expiration_date'], $_POST['manufacturer']);
         $stmt->execute();
         header("Location: ".$_SERVER['PHP_SELF']."?alert=added");
