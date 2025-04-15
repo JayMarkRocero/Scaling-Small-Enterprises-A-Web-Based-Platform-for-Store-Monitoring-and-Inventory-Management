@@ -1,13 +1,11 @@
 <?php
-// Connect to the database
-include '../DATABASE/db.php'; // Make sure this file correctly initializes $conn
+include '../DATABASE/db.php';
 
 function getUserCount() {
     global $conn;
 
     $userCount = 0;
 
-    // Call the stored procedure
     $conn->query("CALL GetUserCount(@userCount)");
     $result = $conn->query("SELECT @userCount AS userCount");
 
@@ -18,7 +16,6 @@ function getUserCount() {
     return $userCount;
 }
 
-// Call the function to get the user count
 $totalUsers = getUserCount();
 ?>
 
