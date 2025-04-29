@@ -1,5 +1,5 @@
 <?php
-include '../DATABASE/db.php';
+require_once '../DATABASE/db.php';
 include 'User.php';
 
 $user = new User($conn);
@@ -172,7 +172,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                     <label for="user_role" class="form-label">User Role:</label>
                                     <select class="form-select" id="user_role" name="user_role" required>
                                         <?php
-                                        include '../DATABASE/db.php';
+                                        require_once '../DATABASE/db.php';
                                         $roles = $conn->query("SELECT role_id, role_name FROM roles");
                                         while ($row = $roles->fetch_assoc()) {
                                             echo "<option value='{$row['role_id']}'>{$row['role_name']}</option>";
