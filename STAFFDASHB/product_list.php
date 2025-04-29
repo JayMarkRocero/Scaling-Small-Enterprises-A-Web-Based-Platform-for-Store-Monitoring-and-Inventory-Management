@@ -1,6 +1,9 @@
 <?php
 require_once '../DATABASE/db.php';
 
+$db = new Database();
+$conn = $db->getConnection();
+
 $search = $_GET['search'] ?? '';
 
 if ($search) {
