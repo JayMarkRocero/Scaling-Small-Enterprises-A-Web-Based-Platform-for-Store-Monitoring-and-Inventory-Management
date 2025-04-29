@@ -1,7 +1,9 @@
 <?php
 require_once '../DATABASE/db.php';
-include 'User.php';
+require_once '../CLASSES/user.php';
 
+$db = new Database();
+$conn = $db->getConnection();
 $user = new User($conn);
 
 // Debugging the connection
@@ -36,47 +38,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <title>User Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <style>
-        body {
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .sidebar {
-            min-height: 100vh;
-            background-color: #212529;
-            color: white;
-        }
-        .sidebar-header {
-            padding: 20px 15px;
-            background-color: #111418;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-        .sidebar .nav-link {
-            color: rgba(255,255,255,0.8);
-            padding: 12px 20px;
-        }
-        .sidebar .nav-link:hover,
-        .sidebar .nav-link.active {
-            background-color: rgba(255,255,255,0.1);
-            color: white;
-        }
-        .sidebar .nav-link i {
-            margin-right: 10px;
-        }
-        .content {
-            padding: 30px;
-        }
-        .card {
-            border: none;
-            box-shadow: 0 0 15px rgba(0,0,0,0.05);
-        }
-        .card-header {
-            background-color: #fff;
-            font-weight: 600;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-        }
-    </style>
+    <link rel="stylesheet" href="../ADMINDASHB/bootstrap.css">
 </head>
 <body>
 
@@ -148,43 +110,41 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
             <?php endif; ?>
 
-            <div class="row">
-                <div class="col-md-8 col-lg-6">
-                    <div class="card">
-                        <div class="card-header">
-                            User Information
-                        </div>
-                        <div class="card-body">
-                            <form method="POST" action="">
-                                <div class="mb-3">
-                                    <label for="full_name" class="form-label">Name:</label>
-                                    <input type="text" class="form-control" id="full_name" name="full_name" placeholder="Full Name" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="username" class="form-label">Username:</label>
-                                    <input type="text" class="form-control" id="username" name="username" placeholder="Username" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="password" class="form-label">Password:</label>
-                                    <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="user_role" class="form-label">User Role:</label>
-                                    <select class="form-select" id="user_role" name="user_role" required>
-                                        <?php
-                                        require_once '../DATABASE/db.php';
-                                        $roles = $conn->query("SELECT role_id, role_name FROM roles");
-                                        while ($row = $roles->fetch_assoc()) {
-                                            echo "<option value='{$row['role_id']}'>{$row['role_name']}</option>";
-                                        }
-                                        $conn->close();
-                                        ?>
-                                    </select>
-                                </div>
-                                <button type="submit" class="btn btn-primary">Add User</button>
-                            </form>
-                        </div>
-                    </div>
+            <!-- User List Table -->
+            <div class="card">
+                <div class="card-header">List of Users</div>
+                <div class="card-body table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Full Name</th>
+                                <th>Username</th>
+                                <th>Role</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            $result = $conn->query("CALL GetAllUsersWithRoles()");
+
+                            if (!$result) {
+                                echo "<tr><td colspan='4'>Error fetching users: " . $conn->error . "</td></tr>";
+                            } else {
+                                $i = 1;
+                                while ($row = $result->fetch_assoc()) {
+                                    echo "<tr>
+                                            <td>" . $i++ . "</td>
+                                            <td>" . htmlspecialchars($row['full_name']) . "</td>
+                                            <td>" . htmlspecialchars($row['username']) . "</td>
+                                            <td>" . htmlspecialchars($row['role_name']) . "</td>
+                                          </tr>";
+                                }
+                                $result->close();
+                                $conn->next_result();
+                            }
+                            ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </main>
@@ -218,20 +178,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <select class="form-select" id="user_role" name="user_role" required>
                     <option value="">Select Role</option>
                     <?php
-                    // Debugging the query for roles
-                    $roles = $conn->query("SELECT role_id, role_name FROM roles");
+                    $roles = $conn->query("CALL GetAllRoles()");
 
                     if ($roles) {
                         if ($roles->num_rows > 0) {
                             while ($row = $roles->fetch_assoc()) {
                                 echo "<option value='{$row['role_id']}'>{$row['role_name']}</option>";
                             }
+                            $roles->close();
+                            $conn->next_result();
                         } else {
                             echo "<option disabled>No roles found</option>";
                         }
                     } else {
                         echo "<option disabled>Error loading roles: " . $conn->error . "</option>";
                     }
+                    
                     ?>
                 </select>
             </div>

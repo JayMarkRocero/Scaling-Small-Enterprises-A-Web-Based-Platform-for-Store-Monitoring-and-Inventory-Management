@@ -2,6 +2,9 @@
 session_start();
 require_once '../DATABASE/db.php';
 
+$db = new Database();
+$conn = $db->getConnection();
+
 // Initialize cart if not set
 if (!isset($_SESSION['cart'])) {
     $_SESSION['cart'] = [];
