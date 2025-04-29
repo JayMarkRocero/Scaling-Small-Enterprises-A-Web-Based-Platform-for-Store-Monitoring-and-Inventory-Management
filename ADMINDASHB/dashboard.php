@@ -8,8 +8,8 @@ global $conn;
 $userCount = 0;
 
 // Call the stored procedure for total user
-$conn->query ("CALL GetUserCount(@userCount)");
-$result = $conn->query("SELECT @userCount AS userCount");
+$conn->query("CALL GetUserCount(@userCount)");
+$result = $conn->query ("SELECT @userCount AS userCount");
 
 if ($result && $row = $result->fetch_assoc()) {
 $userCount = $row['userCount'];
@@ -32,10 +32,39 @@ function getTotalProducts() {
 
     return $totalProducts;
 }
+function getLowStockProducts() {
+  global $conn;
 
+  $lowStockProducts = [];
+
+  // Set your low stock threshold
+  $threshold = 3;
+
+  // Prepare and execute the stored procedure
+  if ($stmt = $conn->prepare("CALL GetLowStockProducts(?)")) {
+      $stmt->bind_param("i", $threshold);
+      $stmt->execute();
+
+      $result = $stmt->get_result();
+
+      if ($result) {
+          while ($row = $result->fetch_assoc()) {
+              $lowStockProducts[] = $row;
+          }
+          $result->free();
+      }
+
+      $stmt->close();
+  } else {
+      error_log("Failed to prepare statement: " . $conn->error);
+  }
+
+  return $lowStockProducts;
+}
 // Call the function to get the user count
 $totalUsers = getUserCount();
 $totalProducts = getTotalProducts();
+$lowStockProducts = getLowStockProducts();
 ?>
 
 <!DOCTYPE html>
@@ -138,8 +167,35 @@ INVENTORY SYSTEM
 <div class="col-md-9 ms-sm-auto col-lg-10 px-md-4 content">
   <h1 class="mb-3">Dashboard</h1>
 
+  <!-- Check for low stock products -->
+  <?php if (count($lowStockProducts) > 0): ?>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.21/dist/sweetalert2.all.min.js"></script>
+    <script>
+      // Prepare the low stock products data for the alert
+      var lowStockProducts = <?php echo json_encode($lowStockProducts); ?>;
+      
+      // Trigger SweetAlert for low stock products
+      var productList = '<ul>';
+      lowStockProducts.forEach(function(product) {
+        productList += '<li>' + product.ProductName + ' (Only ' + product.Stock + ' left)</li>';
+      });
+      productList += '</ul>';
+
+      Swal.fire({
+        title: 'Low Stock Alert!',
+        html: productList,
+        icon: 'warning',
+        confirmButtonText: 'Ok',
+        position: 'center', // To position it at the top
+        toast: true, // Makes it appear as a toast (non-blocking)
+        timer: 5000, // Dismiss after 5 seconds
+        showConfirmButton: true
+      });
+    </script>
+  <?php endif; ?>
+
   <div class="row g-3">
-    
+    <!-- Example Card (Total Users) -->
     <div class="col-md-6">
       <div class="card bg-primary text-white" style="height: 130px; display: flex; justify-content: center; align-items: center;">
         <div class="text-center">
@@ -150,10 +206,11 @@ INVENTORY SYSTEM
       </div>
     </div>
 
+    <!-- Example Card (Total Products) -->
     <div class="col-md-6">
       <div class="card bg-success text-white" style="height: 130px; display: flex; justify-content: center; align-items: center;">
         <div class="text-center">
-          <i class="bi bi-box-seam fs-4 d-block mb-1"></i>
+          <i class="bi bi-boxes fs-4 d-block mb-1"></i>
           <div class="card-title mb-0" style="font-size: 0.95rem;">Total Products</div>
           <div class="card-text" style="font-size: 1.05rem;"><?php echo $totalProducts; ?></div>
         </div>
@@ -161,4 +218,13 @@ INVENTORY SYSTEM
     </div>
   </div>
 </div>
+</div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+
 
