@@ -1,6 +1,9 @@
 <?php
 require_once '../DATABASE/db.php';
 
+$db = new Database();
+$conn = $db->getConnection();
+
 $alert = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

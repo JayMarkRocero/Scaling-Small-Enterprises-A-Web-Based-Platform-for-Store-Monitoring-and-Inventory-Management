@@ -1,7 +1,9 @@
 <?php
 require_once '../DATABASE/db.php';
-include 'User.php';
+require_once '../CLASSES/user.php';
 
+$db = new Database();
+$conn = $db->getConnection();
 $user = new User($conn);
 
 // Debugging the connection
@@ -36,47 +38,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <title>User Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <style>
-        body {
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .sidebar {
-            min-height: 100vh;
-            background-color: #212529;
-            color: white;
-        }
-        .sidebar-header {
-            padding: 20px 15px;
-            background-color: #111418;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-        .sidebar .nav-link {
-            color: rgba(255,255,255,0.8);
-            padding: 12px 20px;
-        }
-        .sidebar .nav-link:hover,
-        .sidebar .nav-link.active {
-            background-color: rgba(255,255,255,0.1);
-            color: white;
-        }
-        .sidebar .nav-link i {
-            margin-right: 10px;
-        }
-        .content {
-            padding: 30px;
-        }
-        .card {
-            border: none;
-            box-shadow: 0 0 15px rgba(0,0,0,0.05);
-        }
-        .card-header {
-            background-color: #fff;
-            font-weight: 600;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-        }
-    </style>
+    <link rel="stylesheet" href="../ADMINDASHB/bootstrap.css">
 </head>
 <body>
 
@@ -163,25 +125,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         </thead>
                         <tbody>
                             <?php
-                            $query = "SELECT users.user_id, users.full_name, users.username, roles.role_name 
-                                      FROM users 
-                                      JOIN roles ON users.role_id = roles.role_id";
-                            $result = $conn->query($query);
+                            $result = $conn->query("CALL GetAllUsersWithRoles()");
 
                             if (!$result) {
                                 echo "<tr><td colspan='4'>Error fetching users: " . $conn->error . "</td></tr>";
                             } else {
                                 $i = 1;
-                                while ($row = $result->fetch_assoc()):
-                            ?>
-                                    <tr>
-                                        <td><?= $i++ ?></td>
-                                        <td><?= htmlspecialchars($row['full_name']) ?></td>
-                                        <td><?= htmlspecialchars($row['username']) ?></td>
-                                        <td><?= htmlspecialchars($row['role_name']) ?></td>
-                                    </tr>
-                            <?php
-                                endwhile;
+                                while ($row = $result->fetch_assoc()) {
+                                    echo "<tr>
+                                            <td>" . $i++ . "</td>
+                                            <td>" . htmlspecialchars($row['full_name']) . "</td>
+                                            <td>" . htmlspecialchars($row['username']) . "</td>
+                                            <td>" . htmlspecialchars($row['role_name']) . "</td>
+                                          </tr>";
+                                }
+                                $result->close();
+                                $conn->next_result();
                             }
                             ?>
                         </tbody>
@@ -219,20 +178,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <select class="form-select" id="user_role" name="user_role" required>
                     <option value="">Select Role</option>
                     <?php
-                    // Debugging the query for roles
-                    $roles = $conn->query("SELECT role_id, role_name FROM roles");
+                    $roles = $conn->query("CALL GetAllRoles()");
 
                     if ($roles) {
                         if ($roles->num_rows > 0) {
                             while ($row = $roles->fetch_assoc()) {
                                 echo "<option value='{$row['role_id']}'>{$row['role_name']}</option>";
                             }
+                            $roles->close();
+                            $conn->next_result();
                         } else {
                             echo "<option disabled>No roles found</option>";
                         }
                     } else {
                         echo "<option disabled>Error loading roles: " . $conn->error . "</option>";
                     }
+                    
                     ?>
                 </select>
             </div>
