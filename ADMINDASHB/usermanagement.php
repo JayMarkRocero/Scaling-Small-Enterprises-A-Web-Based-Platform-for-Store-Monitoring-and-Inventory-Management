@@ -1,14 +1,22 @@
 <?php
-include '../DATABASE/db.php';
-include 'User.php';
+require_once '../DATABASE/db.php';
+require_once '../CLASSES/user.php';
 
+$db = new Database();
+$conn = $db->getConnection();
 $user = new User($conn);
 
+// Debugging the connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Handle Add User
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $full_name = $_POST['full_name'];
     $username = $_POST['username'];
     $password = $_POST['password'];
-    $user_role = $_POST['user_role']; 
+    $user_role = $_POST['user_role'];
 
     if ($user->usernameExists($username)) {
         $error_message = "Username already exists. Please choose a different username.";
@@ -19,8 +27,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $error_message = "Error adding user.";
         }
     }
-
-    $conn->close();
 }
 ?>
 
@@ -29,61 +35,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add New User</title>
-    <!-- Bootstrap CSS -->
+    <title>User Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
-        }
-        
-        .sidebar {
-            min-height: 100vh;
-            background-color: #212529;
-            color: white;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        
-        .sidebar-header {
-            padding: 20px 15px;
-            background-color: #111418;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-        
-        .sidebar .nav-link {
-            color: rgba(255,255,255,0.8);
-            padding: 12px 20px;
-            transition: all 0.3s;
-        }
-        
-        .sidebar .nav-link:hover, .sidebar .nav-link.active {
-            background-color: rgba(255,255,255,0.1);
-            color: white;
-        }
-        
-        .sidebar .nav-link i {
-            margin-right: 10px;
-        }
-        
-        .content {
-            padding: 30px;
-        }
-        
-        .card {
-            border: none;
-            box-shadow: 0 0 15px rgba(0,0,0,0.05);
-        }
-        
-        .card-header {
-            background-color: #fff;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-            font-weight: 600;
-        }
-    </style>
+    <link rel="stylesheet" href="../ADMINDASHB/bootstrap.css">
 </head>
 <body>
 
@@ -120,6 +75,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <i class="bi bi-graph-up"></i> Sales Report
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="../ADMINDASHB/orders.php">
+                         <i class="bi bi-bag-check"></i> Ordering
+                    </a>
+                 </li>
                 <li class="nav-item mt-3">
                     <a class="nav-link text-danger" href="../LOGIN/logout.php">
                         <i class="bi bi-box-arrow-right"></i> Logout
@@ -131,7 +91,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <!-- Main Content -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 content">
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h2>Add New User</h2>
+                <h2>User Management</h2>
+                <!-- Button to trigger modal -->
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#userModal">Add New User</button>
             </div>
 
             <?php if (isset($error_message)): ?>
@@ -148,50 +110,100 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
             <?php endif; ?>
 
-            <div class="row">
-                <div class="col-md-8 col-lg-6">
-                    <div class="card">
-                        <div class="card-header">
-                            User Information
-                        </div>
-                        <div class="card-body">
-                            <form method="POST" action="">
-                                <div class="mb-3">
-                                    <label for="full_name" class="form-label">Name:</label>
-                                    <input type="text" class="form-control" id="full_name" name="full_name" placeholder="Full Name" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="username" class="form-label">Username:</label>
-                                    <input type="text" class="form-control" id="username" name="username" placeholder="Username" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="password" class="form-label">Password:</label>
-                                    <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="user_role" class="form-label">User Role:</label>
-                                    <select class="form-select" id="user_role" name="user_role" required>
-                                        <?php
-                                        include '../DATABASE/db.php';
-                                        $roles = $conn->query("SELECT role_id, role_name FROM roles");
-                                        while ($row = $roles->fetch_assoc()) {
-                                            echo "<option value='{$row['role_id']}'>{$row['role_name']}</option>";
-                                        }
-                                        $conn->close();
-                                        ?>
-                                    </select>
-                                </div>
-                                <button type="submit" class="btn btn-primary">Add User</button>
-                            </form>
-                        </div>
-                    </div>
+            <!-- User List Table -->
+            <div class="card">
+                <div class="card-header">List of Users</div>
+                <div class="card-body table-responsive">
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Full Name</th>
+                                <th>Username</th>
+                                <th>Role</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            $result = $conn->query("CALL GetAllUsersWithRoles()");
+
+                            if (!$result) {
+                                echo "<tr><td colspan='4'>Error fetching users: " . $conn->error . "</td></tr>";
+                            } else {
+                                $i = 1;
+                                while ($row = $result->fetch_assoc()) {
+                                    echo "<tr>
+                                            <td>" . $i++ . "</td>
+                                            <td>" . htmlspecialchars($row['full_name']) . "</td>
+                                            <td>" . htmlspecialchars($row['username']) . "</td>
+                                            <td>" . htmlspecialchars($row['role_name']) . "</td>
+                                          </tr>";
+                                }
+                                $result->close();
+                                $conn->next_result();
+                            }
+                            ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </main>
     </div>
 </div>
 
-<!-- Bootstrap JS Bundle with Popper -->
+<!-- Modal for Adding User -->
+<div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="userModalLabel">Add User</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form method="POST" action="">
+            <div class="mb-3">
+                <label for="full_name" class="form-label">Name:</label>
+                <input type="text" class="form-control" id="full_name" name="full_name" required>
+            </div>
+            <div class="mb-3">
+                <label for="username" class="form-label">Username:</label>
+                <input type="text" class="form-control" id="username" name="username" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password:</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            <div class="mb-3">
+                <label for="user_role" class="form-label">User Role:</label>
+                <select class="form-select" id="user_role" name="user_role" required>
+                    <option value="">Select Role</option>
+                    <?php
+                    $roles = $conn->query("CALL GetAllRoles()");
+
+                    if ($roles) {
+                        if ($roles->num_rows > 0) {
+                            while ($row = $roles->fetch_assoc()) {
+                                echo "<option value='{$row['role_id']}'>{$row['role_name']}</option>";
+                            }
+                            $roles->close();
+                            $conn->next_result();
+                        } else {
+                            echo "<option disabled>No roles found</option>";
+                        }
+                    } else {
+                        echo "<option disabled>Error loading roles: " . $conn->error . "</option>";
+                    }
+                    
+                    ?>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Add User</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

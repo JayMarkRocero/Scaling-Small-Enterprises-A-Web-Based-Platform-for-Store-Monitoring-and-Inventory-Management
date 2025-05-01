@@ -1,7 +1,9 @@
 <?php
 require_once '../DATABASE/db.php';
 
-$low_stock_threshold = 5;
+$db = new Database();
+$conn = $db->getConnection();
+
 $alert = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -54,45 +56,45 @@ while ($cat = $categoryResult->fetch_assoc()) {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f8f9fa;
         }
-        
+
         .sidebar {
             min-height: 100vh;
             background-color: #212529;
             color: white;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
-        
+
         .sidebar-header {
             padding: 20px 15px;
             background-color: #111418;
             font-weight: bold;
             font-size: 1.2rem;
         }
-        
+
         .sidebar .nav-link {
             color: rgba(255,255,255,0.8);
             padding: 12px 20px;
             transition: all 0.3s;
         }
-        
+
         .sidebar .nav-link:hover, .sidebar .nav-link.active {
             background-color: rgba(255,255,255,0.1);
             color: white;
         }
-        
+
         .sidebar .nav-link i {
             margin-right: 10px;
         }
-        
+
         .content {
             padding: 30px;
         }
-        
+
         .card {
             border: none;
             box-shadow: 0 0 15px rgba(0,0,0,0.05);
         }
-        
+
         .card-header {
             background-color: #fff;
             border-bottom: 1px solid rgba(0,0,0,0.05);
@@ -135,6 +137,11 @@ while ($cat = $categoryResult->fetch_assoc()) {
                         <i class="bi bi-graph-up"></i> Sales Report
                     </a>
                 </li>
+                <li class="nav-item">
+                     <a class="nav-link" href="../ADMINDASHB/orders.php">
+                        <i class="bi bi-bag-check"></i> Ordering
+                  </a>
+                      </li>
                 <li class="nav-item mt-3">
                     <a class="nav-link text-danger" href="../LOGIN/logout.php">
                         <i class="bi bi-box-arrow-right"></i> Logout
@@ -147,13 +154,10 @@ while ($cat = $categoryResult->fetch_assoc()) {
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 content">
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <h2>Product List</h2>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
-            <i class="bi bi-plus-lg"></i> Add Product
-        </button>
-    </div>
-
-    <!-- Product Table and modals come here... -->
-
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                    <i class="bi bi-plus-lg"></i> Add Product
+                </button>
+            </div>
 
             <table class="table table-hover" id="productTable">
                 <thead>
@@ -168,12 +172,7 @@ while ($cat = $categoryResult->fetch_assoc()) {
                             <td style="display:none;"><?= $row['id'] ?></td>
                             <td><?= $row['product_name'] ?></td>
                             <td><?= $row['category_name'] ?></td>
-                            <td>
-                                <?= $row['stock_quantity'] ?>
-                                <?php if ($row['stock_quantity'] <= $low_stock_threshold): ?>
-                                    <span class="badge bg-danger ms-2">Low Stock</span>
-                                <?php endif; ?>
-                            </td>
+                            <td><?= $row['stock_quantity'] ?></td>
                             <td><?= $row['price'] ?></td>
                             <td>
                                 <button class="btn btn-sm btn-info text-white" data-bs-toggle="modal" data-bs-target="#viewProductModal<?= $row['id'] ?>">View</button>

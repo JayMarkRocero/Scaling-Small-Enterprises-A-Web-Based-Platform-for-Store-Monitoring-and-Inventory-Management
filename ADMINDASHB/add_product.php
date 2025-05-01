@@ -1,6 +1,9 @@
 <?php
 include '../DATABASE/db.php';
 
+$db = new Database();
+$conn = $db->getConnection();
+
 // Handle Form Submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $title = $_POST["title"];
