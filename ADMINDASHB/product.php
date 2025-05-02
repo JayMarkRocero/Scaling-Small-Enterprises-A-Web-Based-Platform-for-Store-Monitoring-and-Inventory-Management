@@ -127,7 +127,11 @@ while ($cat = $categoryResult->fetch_assoc()) {
                         <i class="bi bi-box"></i> Products
                     </a>
                 </li>
+<<<<<<< HEAD
               
+=======
+                
+>>>>>>> Branch/Carandang-Gelo
                 <li class="nav-item">
                     <a class="nav-link" href="../ADMINDASHB/sales_rep.php">
                         <i class="bi bi-graph-up"></i> Sales Report
