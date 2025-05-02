@@ -116,18 +116,14 @@ $lowStockProducts = getLowStockProducts();
             <i class="bi bi-box"></i> Products
           </a>
         </li>
+        
         <li class="nav-item">
-          <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'sales.php' ? 'active' : '' ?>" href="../ADMINDASHB/sales.php">
-            <i class="bi bi-cart"></i> Sales
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'sales_report.php' ? 'active' : '' ?>" href="../ADMINDASHB/sales_report.php">
+          <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'sales_report.php' ? 'active' : '' ?>" href="../ADMINDASHB/sales_rep.php">
             <i class="bi bi-graph-up"></i> Sales Report
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'orders.php' ? 'active' : '' ?>" href="../ADMINDASHB/order.php">
+          <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'orders.php' ? 'active' : '' ?>" href="../ADMINDASHB/orders.php">
             <i class="bi bi-bag-check"></i> Ordering
           </a>
         </li>

@@ -105,13 +105,10 @@ $salesList = $conn->query("
                     <a class="nav-link" href="staff_dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="product_list.php"><i class="bi bi-box"></i> Products</a>
+                    <a class="nav-link" href="productlist.php"><i class="bi bi-box"></i> Products</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link active" href="sales.php"><i class="bi bi-cart"></i> Sales</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="sales_rep.php"><i class="bi bi-graph-up"></i> Sales Report</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="orders_staff.php"><i class="bi bi-bag-check"></i> My Orders</a>

@@ -55,13 +55,9 @@ $result = $order->fetchAllOrders();
                         <i class="bi bi-box"></i> Products
                     </a>
                 </li>
+                
                 <li class="nav-item">
-                    <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'sales.php' ? 'active' : '' ?>" href="../ADMINDASHB/sales.php">
-                        <i class="bi bi-cart"></i> Sales
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'sales_report.php' ? 'active' : '' ?>" href="../ADMINDASHB/sales_report.php">
+                    <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'sales_rep.php' ? 'active' : '' ?>" href="../ADMINDASHB/sales_rep.php">
                         <i class="bi bi-graph-up"></i> Sales Report
                     </a>
                 </li>

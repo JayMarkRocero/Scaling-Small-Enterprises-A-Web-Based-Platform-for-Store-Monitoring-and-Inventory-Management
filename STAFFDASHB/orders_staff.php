@@ -94,11 +94,6 @@ $result = $stmt->get_result();
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?= ($page == 'sales_rep.php') ? 'active' : '' ?>" href="sales_rep.php">
-                        <i class="bi bi-graph-up"></i> Sales Report
-                    </a>
-                </li>
-                <li class="nav-item">
                     <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'orders_staff.php' ? 'active' : '' ?>" href="../STAFFDASHB/orders_staff.php">
                         <i class="bi bi-bag"></i> My Orders
                     </a>

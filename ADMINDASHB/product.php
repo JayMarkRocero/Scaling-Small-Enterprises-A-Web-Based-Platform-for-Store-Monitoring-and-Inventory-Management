@@ -127,13 +127,9 @@ while ($cat = $categoryResult->fetch_assoc()) {
                         <i class="bi bi-box"></i> Products
                     </a>
                 </li>
+              
                 <li class="nav-item">
-                    <a class="nav-link" href="../ADMINDASHB/sales.php">
-                        <i class="bi bi-cart"></i> Sales
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="../ADMINDASHB/sales_report.php">
+                    <a class="nav-link" href="../ADMINDASHB/sales_rep.php">
                         <i class="bi bi-graph-up"></i> Sales Report
                     </a>
                 </li>
