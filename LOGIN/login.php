@@ -18,21 +18,23 @@ class Auth {
     }
 
     public function handleLogin($username, $password) {
-        $query = "SELECT user_id, password_hash, role_id FROM users WHERE username = ?";
-        $stmt = $this->conn->prepare($query);
-
+        $stmt = $this->conn->prepare("CALL CheckUserLogin(?)");
+    
         if (!$stmt) {
             $this->error = "Database error: " . $this->conn->error;
             return;
         }
-
+    
         $stmt->bind_param("s", $username);
         $stmt->execute();
-        $stmt->store_result();
-        $stmt->bind_result($user_id, $hashed_password, $role_id);
-
-        if ($stmt->num_rows > 0) {
-            $stmt->fetch();
+    
+        $result = $stmt->get_result();
+    
+        if ($result && $row = $result->fetch_assoc()) {
+            $user_id = $row['user_id'];
+            $hashed_password = $row['password_hash'];
+            $role_id = $row['role_id'];
+    
             if (password_verify($password, $hashed_password)) {
                 $_SESSION['user_id'] = $user_id;
                 $_SESSION['username'] = $username;
@@ -40,11 +42,11 @@ class Auth {
                 $this->redirectUser($_SESSION['role']);
             }
         }
-
+    
         $this->error = "Invalid username or password.";
         $stmt->close();
         $this->conn->close();
-    }
+    }    
 
     private function redirectUser($role) {
         if ($role == 'admin') {
@@ -77,57 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Panel</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-image: url('../WEBSITE IMAGES/LOGIN.png');
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-position: center;
-            font-family: 'Arial', sans-serif;
-            height: 100vh;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .login-container {
-            max-width: 400px;
-            padding: 30px;
-            background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent background */
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-        }
-        .login-container h1 {
-            font-size: 2rem;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .login-container p {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .login-container .form-control {
-            border-radius: 8px;
-        }
-        .login-container button {
-            width: 100%;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        .login-container button:hover {
-            background-color: #0056b3;
-        }
-        .login-container .error-message {
-            color: red;
-            text-align: center;
-        }
-    </style>
+    <link rel="stylesheet" href="../ADMINDASHB/bootstrap.css">
 </head>
 <body>
 
