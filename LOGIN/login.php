@@ -79,57 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Panel</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-image: url('../WEBSITE IMAGES/LOGIN.png');
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-position: center;
-            font-family: 'Arial', sans-serif;
-            height: 100vh;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .login-container {
-            max-width: 400px;
-            padding: 30px;
-            background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent background */
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-        }
-        .login-container h1 {
-            font-size: 2rem;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .login-container p {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .login-container .form-control {
-            border-radius: 8px;
-        }
-        .login-container button {
-            width: 100%;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        .login-container button:hover {
-            background-color: #0056b3;
-        }
-        .login-container .error-message {
-            color: red;
-            text-align: center;
-        }
-    </style>
+    <link rel="stylesheet" href="../ADMINDASHB/bootstrap.css">
 </head>
 <body>
 
