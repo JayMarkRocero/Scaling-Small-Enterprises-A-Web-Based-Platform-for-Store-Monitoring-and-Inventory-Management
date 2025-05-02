@@ -65,13 +65,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <i class="bi bi-box"></i> Products
                     </a>
                 </li>
+                
                 <li class="nav-item">
-                    <a class="nav-link" href="sales.php">
-                        <i class="bi bi-cart"></i> Sales
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="sales_report.php">
+                    <a class="nav-link" href="sales_rep.php">
                         <i class="bi bi-graph-up"></i> Sales Report
                     </a>
                 </li>
