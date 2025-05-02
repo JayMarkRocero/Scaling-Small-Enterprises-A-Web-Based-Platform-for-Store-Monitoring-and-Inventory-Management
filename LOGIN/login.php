@@ -18,29 +18,23 @@ class Auth {
     }
 
     public function handleLogin($username, $password) {
-        // Default admin
-        if ($username === 'admin' && $password === 'admin123') {
-            $_SESSION['user_id'] = 0;
-            $_SESSION['username'] = 'admin';
-            $_SESSION['role'] = 'admin';
-            $this->redirectUser('admin');
-        }
-
-        $query = "SELECT user_id, password_hash, role_id FROM users WHERE username = ?";
-        $stmt = $this->conn->prepare($query);
-
+        $stmt = $this->conn->prepare("CALL CheckUserLogin(?)");
+    
         if (!$stmt) {
             $this->error = "Database error: " . $this->conn->error;
             return;
         }
-
+    
         $stmt->bind_param("s", $username);
         $stmt->execute();
-        $stmt->store_result(); // required to use num_rows
-        $stmt->bind_result($user_id, $hashed_password, $role_id);
-
-        if ($stmt->num_rows > 0) {
-            $stmt->fetch();
+    
+        $result = $stmt->get_result();
+    
+        if ($result && $row = $result->fetch_assoc()) {
+            $user_id = $row['user_id'];
+            $hashed_password = $row['password_hash'];
+            $role_id = $row['role_id'];
+    
             if (password_verify($password, $hashed_password)) {
                 $_SESSION['user_id'] = $user_id;
                 $_SESSION['username'] = $username;
@@ -48,11 +42,11 @@ class Auth {
                 $this->redirectUser($_SESSION['role']);
             }
         }
-
+    
         $this->error = "Invalid username or password.";
         $stmt->close();
         $this->conn->close();
-    }
+    }    
 
     private function redirectUser($role) {
         if ($role == 'admin') {
