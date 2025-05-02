@@ -118,11 +118,7 @@ $lowStockProducts = getLowStockProducts();
         </li>
         
         <li class="nav-item">
-<<<<<<< HEAD
-          <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'sales_report.php' ? 'active' : '' ?>" href="../ADMINDASHB/sales_rep.php">
-=======
           <a class="nav-link <?= basename($_SERVER['PHP_SELF']) == 'sales_rep.php' ? 'active' : '' ?>" href="../ADMINDASHB/sales_rep.php">
->>>>>>> Branch/Carandang-Gelo
             <i class="bi bi-graph-up"></i> Sales Report
           </a>
         </li>
