@@ -52,6 +52,61 @@ $lowStockProducts = getLowStockProducts();
 <body>
 
 <div class="container-fluid">
+<<<<<<< HEAD
+<div class="row">
+<!-- Sidebar -->
+<div class="col-md-3 col-lg-2 d-md-block sidebar">
+<div class="sidebar-header">
+INVENTORY SYSTEM
+</div>
+<ul class="nav flex-column">
+<li class="nav-item">
+<a class="nav-link" href="../ADMINDASHB/dashboard.php">
+<i class="bi bi-speedometer2"></i> Dashboard
+</a>
+</li>
+<li class="nav-item">
+<a class="nav-link active" href="../ADMINDASHB/usermanagement.php">
+<i class="bi bi-people"></i> User Management
+</a>
+</li>
+<li class="nav-item">
+<a class="nav-link" href="../ADMINDASHB/product.php">
+<i class="bi bi-box"></i> Products
+</a>
+</li>
+<li class="nav-item">
+<a class="nav-link" href="../ADMINDASHB/sales.php">
+<i class="bi bi-cart"></i> Sales
+</a>
+</li>
+<li class="nav-item">
+<a class="nav-link" href="../ADMINDASHB/sales_report.php">
+<i class="bi bi-graph-up"></i> Sales Report
+</a>
+</li>
+<li class="nav-item mt-3">
+<a class="nav-link text-danger" href="../LOGIN/logout.php">
+<i class="bi bi-box-arrow-right"></i> Logout
+</a>
+</li>
+</ul>
+</div>
+
+<!-- Main Content Area -->
+<div class="col-md-9 ms-sm-auto col-lg-10 px-md-4 content">
+  <h1 class="mb-3">Dashboard</h1>
+
+  <div class="row g-3">
+    
+    <div class="col-md-6">
+      <div class="card bg-primary text-white" style="height: 130px; display: flex; justify-content: center; align-items: center;">
+        <div class="text-center">
+          <i class="bi bi-people-fill fs-4 d-block mb-1"></i>
+          <div class="card-title mb-0" style="font-size: 0.95rem;">Total Users</div>
+          <div class="card-text" style="font-size: 1.05rem;"><?php echo $totalUsers; ?></div>
+        </div>
+=======
   <div class="row">
     <!-- Sidebar -->
     <div class="col-md-3 col-lg-2 d-md-block sidebar">
