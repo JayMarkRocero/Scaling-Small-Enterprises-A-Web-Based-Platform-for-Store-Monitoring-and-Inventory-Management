@@ -115,7 +115,7 @@ if ($salesReport->num_rows > 0) {
                     </a>
                 </li>
                 <li class="nav-item"><a class="nav-link text-white" href="product.php"><i class="bi bi-box"></i> Products</a></li>
-                <li class="nav-item"><a class="nav-link active text-white bg-secondary" href="#"><i class="bi bi-graph-up"></i> Sales Report</a></li>
+                <li class="nav-item"><a class="nav-link active text-white bg-secondary" href="sales_rep.php"><i class="bi bi-graph-up"></i> Sales Report</a></li>
                 <li class="nav-item"><a class="nav-link text-white" href="orders.php"><i class="bi bi-bag-check"></i> Ordering</a></li>
                 <li class="nav-item mt-3"><a class="nav-link text-danger" href="../LOGIN/logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
             </ul>
