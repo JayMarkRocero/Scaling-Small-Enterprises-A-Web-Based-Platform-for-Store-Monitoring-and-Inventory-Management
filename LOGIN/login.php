@@ -56,7 +56,6 @@ class Auth {
         }
         exit();
     }
-    
 
     public function getError() {
         return $this->error;
@@ -71,6 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $auth->handleLogin($username, $password);
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
