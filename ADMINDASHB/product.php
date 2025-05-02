@@ -1,6 +1,9 @@
 <?php
 require_once '../DATABASE/db.php';
 
+$db = new Database();
+$conn = $db->getConnection();
+
 $alert = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -125,12 +128,12 @@ while ($cat = $categoryResult->fetch_assoc()) {
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">
+                    <a class="nav-link" href="../ADMINDASHB/sales.php">
                         <i class="bi bi-cart"></i> Sales
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">
+                    <a class="nav-link" href="../ADMINDASHB/sales_report.php">
                         <i class="bi bi-graph-up"></i> Sales Report
                     </a>
                 </li>

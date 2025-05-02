@@ -2,6 +2,9 @@
 session_start();
 require_once '../DATABASE/db.php';
 
+$db = new Database();
+$conn = $db->getConnection();
+
 // Initialize cart if not set
 if (!isset($_SESSION['cart'])) {
     $_SESSION['cart'] = [];
@@ -36,18 +39,21 @@ if (isset($_POST['add_sale'])) {
     $product = $conn->query("SELECT price FROM products WHERE id = $product_id")->fetch_assoc();
     $total_price = $product['price'] * $quantity_sold;
 
-    $conn->query("INSERT INTO sales (product_id, quantity_sold, total_price, sale_date) 
+    $conn->query("INSERT INTO sales (product_id, category, quantity_sold, total_price, sale_date) 
                   VALUES ($product_id, $quantity_sold, $total_price, NOW())");
 
     header("Location: sales.php?added_sale=1");
     exit();
 }
 
-// Fetch sales records
-$salesList = $conn->query("SELECT sales.id, products.product_name, sales.quantity_sold, sales.total_price, sales.sale_date 
-                           FROM sales 
-                           JOIN products ON sales.product_id = products.id 
-                           ORDER BY sales.sale_date DESC");
+// Fetch sales records with category
+$salesList = $conn->query("
+    SELECT sales.id, products.product_name, categories.category_name AS category, sales.quantity_sold, sales.total_price, sales.sale_date 
+    FROM sales 
+    JOIN products ON sales.product_id = products.id 
+    JOIN categories ON products.category_id = categories.id 
+    ORDER BY sales.sale_date DESC
+");
 ?>
 
 <!DOCTYPE html>
@@ -159,6 +165,7 @@ $salesList = $conn->query("SELECT sales.id, products.product_name, sales.quantit
                         <tr>
                             <th>Sale ID</th>
                             <th>Product</th>
+                            <th>Category</th>
                             <th>Quantity</th>
                             <th>Total Price</th>
                             <th>Date</th>
@@ -169,6 +176,7 @@ $salesList = $conn->query("SELECT sales.id, products.product_name, sales.quantit
                         <tr>
                             <td><?= htmlspecialchars($sale['id']); ?></td>
                             <td><?= htmlspecialchars($sale['product_name']); ?></td>
+                            <td><?= htmlspecialchars($sale['category']); ?></td>
                             <td><?= htmlspecialchars($sale['quantity_sold']); ?></td>
                             <td>₱<?= number_format($sale['total_price'], 2); ?></td>
                             <td><?= htmlspecialchars($sale['sale_date']); ?></td>
