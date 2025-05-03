@@ -38,10 +38,8 @@ if (isset($_POST['add_sale'])) {
 
     $product = $conn->query("SELECT price FROM products WHERE id = $product_id")->fetch_assoc();
     $total_price = $product['price'] * $quantity_sold;
-
-    $conn->query("INSERT INTO sales (product_id, category, quantity_sold, total_price, sale_date) 
-                  VALUES ($product_id, $quantity_sold, $total_price, NOW())");
-
+    $conn->query("INSERT INTO sales (product_id, quantity_sold, total_price, sale_date)  
+    VALUES ('$product_id', '$quantity_sold', '$total_price', NOW())");
     header("Location: sales.php?added_sale=1");
     exit();
 }
