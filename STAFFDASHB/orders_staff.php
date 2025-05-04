@@ -236,7 +236,7 @@ $ordersQuery = "SELECT o.order_id, o.order_date, o.status,
                 COALESCE(SUM(oi.total_price), 0) as total_amount
                 FROM orders o
                 LEFT JOIN order_items oi ON o.order_id = oi.order_id
-                WHERE o.user_id = ?
+                WHERE o.user_id = ? AND o.status != 'Cancelled'
                 GROUP BY o.order_id, o.order_date, o.status
                 ORDER BY o.order_date DESC";
 
