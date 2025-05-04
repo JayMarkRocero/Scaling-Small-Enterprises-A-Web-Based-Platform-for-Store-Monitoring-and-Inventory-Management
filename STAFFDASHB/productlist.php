@@ -1,19 +1,37 @@
 <?php
 require_once '../DATABASE/db.php';
+require_once '../CLASSES/Product.php';
 
 $db = new Database();
 $conn = $db->getConnection();
+$productObj = new Product($conn);
 
+// Get all categories for filter dropdown
+$categories = $productObj->getCategories();
+
+// Handle search, filter, and low stock
 $search = $_GET['search'] ?? '';
+$categoryFilter = $_GET['category'] ?? '';
+$lowStockOnly = isset($_GET['lowstock']) && $_GET['lowstock'] == '1';
 
-if ($search) {
-    $stmt = $conn->prepare("SELECT p.*, c.category_name FROM products p JOIN categories c ON p.category_id = c.id WHERE p.product_name LIKE ? ORDER BY p.id DESC");
-    $likeSearch = "%$search%";
-    $stmt->bind_param("s", $likeSearch);
-    $stmt->execute();
-    $products = $stmt->get_result();
+if ($lowStockOnly) {
+    $products = $productObj->getLowStockProducts();
+} elseif ($search) {
+    $products = $productObj->searchProducts($search);
+    // If category filter is also set, filter further
+    if ($categoryFilter) {
+        $products = array_filter($products, function($p) use ($categoryFilter) {
+            return $p['category_id'] == $categoryFilter;
+        });
+    }
+} elseif ($categoryFilter) {
+    // No search, but filter by category
+    $all = $productObj->getAllProducts();
+    $products = array_filter($all, function($p) use ($categoryFilter) {
+        return $p['category_id'] == $categoryFilter;
+    });
 } else {
-    $products = $conn->query("SELECT p.*, c.category_name FROM products p JOIN categories c ON p.category_id = c.id ORDER BY p.id DESC");
+    $products = $productObj->getAllProducts();
 }
 ?>
 
@@ -21,9 +39,11 @@ if ($search) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Products List</title>
+    <title>Product List</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -62,7 +82,22 @@ if ($search) {
             padding: 30px;
         }
 
-        .table th, .table td {
+        .table-custom {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .table-custom thead {
+            background-color: #f8f9fa;
+        }
+
+        .table-custom th {
+            border-bottom: 2px solid #dee2e6;
+            padding: 15px;
+        }
+
+        .table-custom td {
+            padding: 12px;
             vertical-align: middle;
         }
     </style>
@@ -83,7 +118,7 @@ if ($search) {
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link active" href="product_list.php">
+                    <a class="nav-link active" href="productlist.php">
                         <i class="bi bi-box"></i> Products
                     </a>
                 </li>
@@ -109,40 +144,84 @@ if ($search) {
         <!-- Main Content -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 content">
             <h2 class="mb-4">Product List</h2>
-
-            <form method="GET" class="mb-3">
-                <input type="text" name="search" placeholder="Search product..." class="form-control" value="<?= htmlspecialchars($search) ?>">
+            <form method="get" class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <input type="text" name="search" class="form-control" placeholder="Search product or category..." value="<?= htmlspecialchars($search) ?>">
+                </div>
+                <div class="col-md-3">
+                    <select name="category" class="form-select">
+                        <option value="">All Categories</option>
+                        <?php foreach ($categories as $cat): ?>
+                            <option value="<?= $cat['id'] ?>" <?= $categoryFilter == $cat['id'] ? 'selected' : '' ?>><?= htmlspecialchars($cat['category_name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-center">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="lowstock" value="1" id="lowstock" <?= $lowStockOnly ? 'checked' : '' ?>>
+                        <label class="form-check-label" for="lowstock">Low Stock Only</label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                </div>
             </form>
-
-            <table class="table table-striped">
-                <thead class="table-primary">
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Category</th>
-                        <th>Stock</th>
-                        <th>Price</th>
-                        <th>Expiry</th>
-                        <th>Manufacturer</th>
-                    </tr>
-                </thead>
-                <tbody>
-                <?php while ($row = $products->fetch_assoc()): ?>
-                    <tr>
-                        <td><?= htmlspecialchars($row['id']) ?></td>
-                        <td><?= htmlspecialchars($row['product_name']) ?></td>
-                        <td><?= htmlspecialchars($row['category_name']) ?></td>
-                        <td><?= htmlspecialchars($row['stock_quantity']) ?></td>
-                        <td>₱<?= number_format($row['price'], 2) ?></td>
-                        <td><?= htmlspecialchars($row['expiration_date'] ?? 'N/A') ?></td>
-                        <td><?= htmlspecialchars($row['manufacturer'] ?? 'N/A') ?></td>
-                    </tr>
-                <?php endwhile; ?>
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="table table-custom" id="productTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>Qty</th>
+                            <th>Price</th>
+                            <th>Total Sold</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($products as $product): ?>
+                            <tr<?= $product['stock_quantity'] <= 10 ? ' class="table-warning"' : '' ?>>
+                                <td><?= $product['id'] ?></td>
+                                <td><?= htmlspecialchars($product['product_name']) ?></td>
+                                <td><?= htmlspecialchars($product['category_name']) ?></td>
+                                <td>
+                                    <?= $product['stock_quantity'] ?>
+                                    <?php if ($product['stock_quantity'] <= 10): ?>
+                                        <span class="badge bg-danger ms-2">Low Stock</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>₱<?= number_format($product['price'], 2) ?></td>
+                                <td><?= $product['total_sold'] ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         </main>
     </div>
 </div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        $('#productTable').DataTable({
+            order: [[0, 'desc']]
+        });
+        // Check for low stock products
+        const lowStockProducts = document.querySelectorAll('tr.table-warning');
+        if (lowStockProducts.length > 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Low Stock Alert',
+                html: `There are ${lowStockProducts.length} products with low stock levels. Please inform the administrator to restock these items.`,
+                confirmButtonText: 'OK'
+            });
+        }
+    });
+</script>
 
 </body>
 </html>

@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once '../DATABASE/db.php';
+require_once '../CLASSES/orders.php';
 
 $db = new Database();
 $conn = $db->getConnection();
@@ -9,6 +10,11 @@ $conn = $db->getConnection();
 $salesReport = [];
 $selectedYear = date('Y');
 $selectedMonth = date('1');
+$totalSales = 0;
+$totalTransactions = 0; 
+$totalApproved = 0;
+$totalPending = 0;
+$totalDeclined = 0;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['selected_year'])) {
@@ -28,8 +34,6 @@ $salesReport = $stmt->get_result();
 // Prepare data for graph: total sales for the selected month
 $graphLabels = [];
 $graphData = [];
-$totalSales = 0;
-$totalTransactions = 0; 
 
 while ($row = $salesReport->fetch_assoc()) {
     $graphLabels[] = $row['product_name'];
@@ -38,6 +42,21 @@ while ($row = $salesReport->fetch_assoc()) {
     $totalTransactions += $row['quantity_sold']; 
 }
 
+// Calculate totals by status for the selected month and year
+$statusTotals = $conn->query("
+    SELECT status, SUM(total_price) as total
+    FROM sales
+    WHERE MONTH(sale_date) = $selectedMonth AND YEAR(sale_date) = $selectedYear
+    GROUP BY status
+");
+
+if ($statusTotals) {
+    while ($row = $statusTotals->fetch_assoc()) {
+        if ($row['status'] == 'Approved') $totalApproved = $row['total'];
+        if ($row['status'] == 'Pending') $totalPending = $row['total'];
+        if ($row['status'] == 'Declined') $totalDeclined = $row['total'];
+    }
+}
 
 $salesReport->free();
 $stmt->close();
@@ -46,8 +65,8 @@ $stmt->close();
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sales Report</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
@@ -95,6 +114,7 @@ $stmt->close();
     </style>
 </head>
 <body>
+
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar -->
@@ -148,15 +168,31 @@ $stmt->close();
                     <div class="card bg-primary text-white">
                         <div class="card-body">
                             <h5 class="card-title">Total Sales</h5>
-                            <p class="card-text">₱<?= number_format($totalSales, 2); ?></p>
+                            <h2 class="card-text">₱<?= number_format($totalSales, 2) ?></h2>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-3">
                     <div class="card bg-success text-white">
                         <div class="card-body">
-                            <h5 class="card-title">Total Transactions</h5>
-                            <p class="card-text"><?= $totalTransactions; ?></p>
+                            <h5 class="card-title">Approved Sales</h5>
+                            <h2 class="card-text">₱<?= number_format($totalApproved, 2) ?></h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body">
+                            <h5 class="card-title">Pending Sales</h5>
+                            <h2 class="card-text">₱<?= number_format($totalPending, 2) ?></h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Declined Sales</h5>
+                            <h2 class="card-text">₱<?= number_format($totalDeclined, 2) ?></h2>
                         </div>
                     </div>
                 </div>

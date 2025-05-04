@@ -18,16 +18,30 @@ if (isset($_POST['add_to_cart'])) {
     $product_id = $_POST['product_id'];
     $quantity_sold = $_POST['quantity_sold'];
 
-    $product = $conn->query("SELECT product_name, price FROM products WHERE id = $product_id")->fetch_assoc();
+    // Get product details and current stock
+    $productQuery = "SELECT product_name, price, stock_quantity FROM products WHERE id = ?";
+    $stmt = $conn->prepare($productQuery);
+    $stmt->bind_param("i", $product_id);
+    $stmt->execute();
+    $product = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
 
-    $_SESSION['cart'][] = [
-        'id' => $product_id,
-        'name' => $product['product_name'],
-        'price' => $product['price'],
-        'quantity' => $quantity_sold
-    ];
-
-    header("Location: sales.php");
+    if ($product) {
+        // Check if there's enough stock
+        if ($product['stock_quantity'] >= $quantity_sold) {
+            $_SESSION['cart'][] = [
+                'id' => $product_id,
+                'name' => $product['product_name'],
+                'price' => $product['price'],
+                'quantity' => $quantity_sold
+            ];
+            header("Location: sales.php?added_cart=1");
+        } else {
+            header("Location: sales.php?error=insufficient_stock");
+        }
+    } else {
+        header("Location: sales.php?error=product_not_found");
+    }
     exit();
 }
 
@@ -36,22 +50,90 @@ if (isset($_POST['add_sale'])) {
     $product_id = $_POST['product_id'];
     $quantity_sold = $_POST['quantity_sold'];
 
+<<<<<<< Updated upstream
     $product = $conn->query("SELECT price FROM products WHERE id = $product_id")->fetch_assoc();
     $total_price = $product['price'] * $quantity_sold;
     $conn->query("INSERT INTO sales (product_id, quantity_sold, total_price, sale_date)  
     VALUES ('$product_id', '$quantity_sold', '$total_price', NOW())");
     header("Location: sales.php?added_sale=1");
     exit();
+=======
+    // Get product details and current stock
+    $productQuery = "SELECT price, stock_quantity FROM products WHERE id = ?";
+    $stmt = $conn->prepare($productQuery);
+    $stmt->bind_param("i", $product_id);
+    $stmt->execute();
+    $product = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if ($product) {
+        // Check if there's enough stock
+        if ($product['stock_quantity'] >= $quantity_sold) {
+            $total_price = $product['price'] * $quantity_sold;
+
+            // Start transaction
+            $conn->begin_transaction();
+
+            try {
+                // Update product stock
+                $updateStock = "UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?";
+                $stmt = $conn->prepare($updateStock);
+                $stmt->bind_param("ii", $quantity_sold, $product_id);
+                $stmt->execute();
+                $stmt->close();
+
+                // Insert into sales
+                $insertSale = "INSERT INTO sales (product_id, quantity_sold, total_price, sale_date) VALUES (?, ?, ?, NOW())";
+                $stmt = $conn->prepare($insertSale);
+                $stmt->bind_param("iid", $product_id, $quantity_sold, $total_price);
+                $stmt->execute();
+                $stmt->close();
+
+                // Commit transaction
+                $conn->commit();
+                header("Location: sales.php?added_sale=1");
+                exit();
+            } catch (Exception $e) {
+                // Rollback transaction on error
+                $conn->rollback();
+                header("Location: sales.php?error=1");
+                exit();
+            }
+        } else {
+            header("Location: sales.php?error=insufficient_stock");
+            exit();
+        }
+    } else {
+        header("Location: sales.php?error=product_not_found");
+        exit();
+    }
+>>>>>>> Stashed changes
 }
 
 // Fetch sales records with category
 $salesList = $conn->query("
-    SELECT sales.id, products.product_name, categories.category_name AS category, sales.quantity_sold, sales.total_price, sales.sale_date 
-    FROM sales 
-    JOIN products ON sales.product_id = products.id 
-    JOIN categories ON products.category_id = categories.id 
-    ORDER BY sales.sale_date DESC
+    SELECT s.id, p.product_name, c.category_name AS category, s.quantity_sold, s.total_price, s.sale_date 
+    FROM sales s
+    JOIN products p ON s.product_id = p.id 
+    JOIN categories c ON p.category_id = c.id 
+    ORDER BY s.sale_date DESC
 ");
+
+// Display error messages
+if (isset($_GET['error'])) {
+    $error_message = '';
+    switch($_GET['error']) {
+        case 'insufficient_stock':
+            $error_message = 'Insufficient stock for this product';
+            break;
+        case 'product_not_found':
+            $error_message = 'Product not found';
+            break;
+        default:
+            $error_message = 'An error occurred while processing your request';
+    }
+    echo '<div class="alert alert-danger">' . $error_message . '</div>';
+}
 ?>
 
 <!DOCTYPE html>
@@ -125,18 +207,11 @@ $salesList = $conn->query("
                 <div class="alert alert-success">Sale recorded successfully!</div>
             <?php endif; ?>
 
-            <form method="POST" class="mb-3 d-flex gap-2">
-                <select name="product_id" class="form-select w-auto" required>
-                    <?php while ($row = $productOptions->fetch_assoc()): ?>
-                        <option value="<?= $row['id']; ?>">
-                            <?= htmlspecialchars($row['product_name']); ?> - ₱<?= number_format($row['price'], 2); ?>
-                        </option>
-                    <?php endwhile; ?>
-                </select>
-                <input type="number" name="quantity_sold" placeholder="Qty" class="form-control w-auto" min="1" required>
-                <button type="submit" name="add_sale" class="btn btn-success">Add Sale</button>
-                <button type="submit" name="add_to_cart" class="btn btn-primary">Add to Order</button>
-            </form>
+            <div class="mb-3">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSaleModal">
+                    <i class="bi bi-plus-circle"></i> Add New Sale
+                </button>
+            </div>
 
             <?php if (!empty($_SESSION['cart'])): ?>
                 <div class="card mb-4">
@@ -153,6 +228,42 @@ $salesList = $conn->query("
                     </ul>
                 </div>
             <?php endif; ?>
+
+            <!-- Add Sale Modal -->
+            <div class="modal fade" id="addSaleModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Add New Sale</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form method="POST">
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Product</label>
+                                    <select name="product_id" class="form-select" required>
+                                        <option value="">Select a product</option>
+                                        <?php while ($row = $productOptions->fetch_assoc()): ?>
+                                            <option value="<?= $row['id']; ?>">
+                                                <?= htmlspecialchars($row['product_name']); ?> - ₱<?= number_format($row['price'], 2); ?>
+                                            </option>
+                                        <?php endwhile; ?>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Quantity</label>
+                                    <input type="number" name="quantity_sold" class="form-control" min="1" required>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="submit" name="add_sale" class="btn btn-success">Record Sale</button>
+                                <a href="orders_staff.php" class="btn btn-primary">Go to Orders</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
 
             <div class="table-responsive">
                 <table class="table table-striped">
@@ -183,5 +294,16 @@ $salesList = $conn->query("
         </main>
     </div>
 </div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Reset the product options dropdown when modal is closed
+        $('#addSaleModal').on('hidden.bs.modal', function () {
+            $(this).find('form')[0].reset();
+        });
+    });
+</script>
 </body>
 </html>
