@@ -1,45 +1,27 @@
 <?php
-session_start();
 require_once '../DATABASE/db.php';
 
+// Connect to database
 $db = new Database();
 $conn = $db->getConnection();
 
-// Initialize cart if not set
-if (!isset($_SESSION['cart'])) {
-    $_SESSION['cart'] = [];
-}
+// Fetch product options for the modal dropdown
+$productOptions = $conn->query("SELECT id, product_name FROM products");
 
-// Fetch product options for dropdown
-$productOptions = $conn->query("SELECT id, product_name, price FROM products");
-
-// Handle add to cart
-if (isset($_POST['add_to_cart'])) {
-    $product_id = $_POST['product_id'];
-    $quantity_sold = $_POST['quantity_sold'];
-
-    $product = $conn->query("SELECT product_name, price FROM products WHERE id = $product_id")->fetch_assoc();
-
-    $_SESSION['cart'][] = [
-        'id' => $product_id,
-        'name' => $product['product_name'],
-        'price' => $product['price'],
-        'quantity' => $quantity_sold
-    ];
-
-    header("Location: sales.php");
-    exit();
-}
-
-// Handle direct sale (Add Sale)
+// Handle modal form submission using stored procedure
+$showSuccess = false;
 if (isset($_POST['add_sale'])) {
     $product_id = $_POST['product_id'];
     $quantity_sold = $_POST['quantity_sold'];
 
-    $product = $conn->query("SELECT price FROM products WHERE id = $product_id")->fetch_assoc();
-    $total_price = $product['price'] * $quantity_sold;
-    $conn->query("INSERT INTO sales (product_id, quantity_sold, total_price, sale_date)  
-    VALUES ('$product_id', '$quantity_sold', '$total_price', NOW())");
+    $stmt = $conn->prepare("CALL AddSale(?, ?)");
+    $stmt->bind_param("ii", $product_id, $quantity_sold);
+    $stmt->execute();
+    $stmt->close();
+
+    $conn->query("INSERT INTO sales (product_id, category, quantity_sold, total_price, sale_date) 
+                  VALUES ($product_id, $quantity_sold, $total_price, NOW())");
+
     header("Location: sales.php?added_sale=1");
     exit();
 }
@@ -58,13 +40,12 @@ $salesList = $conn->query("
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Sales Records</title>
+    <title>Sales</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        body {
-            background-color: #f8f9fa;
-        }
         .sidebar {
             min-height: 100vh;
             background-color: #212529;
@@ -76,28 +57,47 @@ $salesList = $conn->query("
             font-weight: bold;
             font-size: 1.2rem;
         }
-        .nav-link {
+        .sidebar .nav-link {
             color: rgba(255,255,255,0.8);
             padding: 12px 20px;
         }
-        .nav-link:hover, .nav-link.active {
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
             background-color: rgba(255,255,255,0.1);
             color: white;
         }
-        .nav-link i {
+        .sidebar .nav-link i {
             margin-right: 10px;
         }
         .content {
             padding: 30px;
         }
+        .table th, .table td {
+            vertical-align: middle;
+        }
     </style>
 </head>
 <body>
+
+<?php if ($showSuccess): ?>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        Swal.fire({
+            icon: 'success',
+            title: 'Sale added successfully!',
+            showConfirmButton: false,
+            timer: 2000
+        });
+    });
+</script>
+<?php endif; ?>
+
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar -->
         <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
-            <div class="sidebar-header">INVENTORY SYSTEM</div>
+            <div class="sidebar-header">
+                INVENTORY SYSTEM
+            </div>
             <ul class="nav flex-column">
                 <li class="nav-item">
                     <a class="nav-link" href="staff_dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a>
@@ -117,45 +117,17 @@ $salesList = $conn->query("
             </ul>
         </div>
 
-        <!-- Main Content -->
+        <!-- Main content -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 content">
-            <h2 class="mb-4">Sales Records</h2>
-
-            <?php if (isset($_GET['added_sale'])): ?>
-                <div class="alert alert-success">Sale recorded successfully!</div>
-            <?php endif; ?>
-
-            <form method="POST" class="mb-3 d-flex gap-2">
-                <select name="product_id" class="form-select w-auto" required>
-                    <?php while ($row = $productOptions->fetch_assoc()): ?>
-                        <option value="<?= $row['id']; ?>">
-                            <?= htmlspecialchars($row['product_name']); ?> - ₱<?= number_format($row['price'], 2); ?>
-                        </option>
-                    <?php endwhile; ?>
-                </select>
-                <input type="number" name="quantity_sold" placeholder="Qty" class="form-control w-auto" min="1" required>
-                <button type="submit" name="add_sale" class="btn btn-success">Add Sale</button>
-                <button type="submit" name="add_to_cart" class="btn btn-primary">Add to Order</button>
-            </form>
-
-            <?php if (!empty($_SESSION['cart'])): ?>
-                <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">Items to Order</div>
-                    <ul class="list-group list-group-flush">
-                        <?php foreach ($_SESSION['cart'] as $item): ?>
-                            <li class="list-group-item d-flex justify-content-between">
-                                <div>
-                                    <?= htmlspecialchars($item['name']); ?> (x<?= $item['quantity']; ?>)
-                                </div>
-                                <div>₱<?= number_format($item['price'] * $item['quantity'], 2); ?></div>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-            <?php endif; ?>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Sales Records</h2>
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addSaleModal">
+                    <i class="bi bi-plus-circle"></i> Add Sale
+                </button>
+            </div>
 
             <div class="table-responsive">
-                <table class="table table-striped">
+                <table class="table table-striped table-hover">
                     <thead class="table-success">
                         <tr>
                             <th>Sale ID</th>
@@ -169,12 +141,11 @@ $salesList = $conn->query("
                     <tbody>
                         <?php while ($sale = $salesList->fetch_assoc()): ?>
                         <tr>
-                            <td><?= htmlspecialchars($sale['id']); ?></td>
+                            <td><?= $sale['id']; ?></td>
                             <td><?= htmlspecialchars($sale['product_name']); ?></td>
-                            <td><?= htmlspecialchars($sale['category']); ?></td>
-                            <td><?= htmlspecialchars($sale['quantity_sold']); ?></td>
+                            <td><?= $sale['quantity_sold']; ?></td>
                             <td>₱<?= number_format($sale['total_price'], 2); ?></td>
-                            <td><?= htmlspecialchars($sale['sale_date']); ?></td>
+                            <td><?= $sale['sale_date']; ?></td>
                         </tr>
                         <?php endwhile; ?>
                     </tbody>
@@ -183,5 +154,36 @@ $salesList = $conn->query("
         </main>
     </div>
 </div>
+
+<!-- Modal for Add Sale -->
+<div class="modal fade" id="addSaleModal" tabindex="-1" aria-labelledby="addSaleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="POST" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addSaleModalLabel"><i class="bi bi-cart-plus"></i> Add Sale</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="product_id" class="form-label">Product</label>
+                    <select name="product_id" id="product_id" class="form-select" required>
+                        <option value="">Select Product</option>
+                        <?php $productOptions->data_seek(0); while ($row = $productOptions->fetch_assoc()): ?>
+                            <option value="<?= $row['id']; ?>"><?= htmlspecialchars($row['product_name']); ?></option>
+                        <?php endwhile; ?>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="quantity_sold" class="form-label">Quantity</label>
+                    <input type="number" name="quantity_sold" id="quantity_sold" class="form-control" min="1" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" name="add_sale" class="btn btn-primary">Submit Sale</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 </body>
 </html>
