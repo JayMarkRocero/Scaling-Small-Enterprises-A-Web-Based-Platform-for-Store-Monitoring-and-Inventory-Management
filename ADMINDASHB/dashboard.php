@@ -54,8 +54,8 @@ if ($monthlySalesResult->num_rows > 0) {
 $lineChartLabels = [];
 $lineChartData = [];
 for ($i = 1; $i <= 12; $i++) {
-    $lineChartLabels[] = date ("F", mktime(0, 0, 0, $i, 1)); // Month names
-    $lineChartData[] = isset($monthlySalesData[$i]) ? $monthlySalesData[$i] : 0; // Total sales or 0
+    $lineChartLabels[] = date ("F", mktime(0, 0, 0, $i, 1));
+    $lineChartData[] = isset($monthlySalesData[$i]) ? $monthlySalesData[$i] : 0;
 }
 
 $totalUsers = getUserCount();
@@ -72,56 +72,7 @@ $totalSales = getTotalSales();
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-  <style>
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background-color: #f8f9fa;
-    }
-    .sidebar {
-        min-height: 100vh;
-        background-color: #212529;
-        color: white;
-        box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    .sidebar-header {
-        padding: 20px 15px;
-        background-color: #111418;
-        font-weight: bold;
-        font-size: 1.2rem;
-    }
-    .sidebar .nav-link {
-        color: rgba(255,255,255,0.8);
-        padding: 12px 20px;
-        transition: all 0.3s;
-    }
-    .sidebar .nav-link:hover,
-    .sidebar .nav-link.active {
-        background-color: rgba(255,255,255,0.1);
-        color: white;
-    }
-    .sidebar .nav-link i {
-        margin-right: 10px;
-    }
-    .content {
-        padding: 30px;
-    }
-    .card {
-        border: none;
-        box-shadow: 0 0 15px rgba(0,0,0,0.05);
-        width: 100%;
-        max-width: 360px; 
-        margin: auto; 
-    }
-    .card-header {
-        background-color: #fff;
-        border-bottom: 1px solid rgba(0,0,0,0.05);
-        font-weight: 600;
-    }
-    .total-sales-card {
-        background-color: #ffcc00; 
-        color: black; 
-    }
-</style>
+  <link rel="stylesheet" href="../ADMINDASHB/bootstrap.css">
 </head>
 <body>
 

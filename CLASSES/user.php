@@ -7,13 +7,16 @@ class User {
     }
 
     public function usernameExists($username) {
-        $stmt = $this->conn->prepare("SELECT username FROM users WHERE username = ?");
+        // Prepare and bind
+        $stmt = $this->conn->prepare("CALL usernameExist(?, @exists_flag)");
         $stmt->bind_param("s", $username);
         $stmt->execute();
-        $stmt->store_result();
-        $exists = $stmt->num_rows > 0;
         $stmt->close();
-        return $exists;
+
+        // Fetch the OUT parameter
+        $result = $this->conn->query("SELECT @exists_flag AS exists_flag");
+        $row = $result->fetch_assoc();
+        return (bool)$row['exists_flag'];
     }
 
     public function addUser($full_name, $username, $password, $user_role) {
@@ -25,8 +28,11 @@ class User {
         return $result;
     }
 
-    public function getRoles() {
-        $result = $this->conn->query("SELECT role_id, role_name FROM roles");
+    public function GetAllRoles() {
+        $stmt = $this->conn->prepare("CALL GetAllRoles()");
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $stmt->close();
         return $result;
     }
 }
