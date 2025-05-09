@@ -1,7 +1,7 @@
 <?php
 session_start();
 require_once '../DATABASE/db.php';
-require_once '../CLASSES/orders.php';
+include '../CLASSES/orders.php';
 
 // Check if user is logged in and is admin
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
@@ -40,61 +40,7 @@ $totalPages = ceil($totalOrders / $limit);
     <title>Orders Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
-        }
-        .sidebar {
-            min-height: 100vh;
-            background-color: #212529;
-            color: white;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        .sidebar-header {
-            padding: 20px 15px;
-            background-color: #111418;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-        .sidebar .nav-link {
-            color: rgba(255,255,255,0.8);
-            padding: 12px 20px;
-            transition: all 0.3s;
-        }
-        .sidebar .nav-link:hover, .sidebar .nav-link.active {
-            background-color: rgba(255,255,255,0.1);
-            color: white;
-        }
-        .sidebar .nav-link i {
-            margin-right: 10px;
-        }
-        .content {
-            padding: 30px;
-        }
-        .card {
-            margin-bottom: 20px;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-        }
-        .status-badge {
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-        .status-pending {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-        .status-approved {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .status-declined {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-    </style>
+    <link rel="stylesheet" href="../ADMINDASHB/bootstrap.css">
 </head>
 <body>
 
@@ -154,7 +100,6 @@ $totalPages = ceil($totalOrders / $limit);
                                     <th>Total Amount</th>
                                     <th>Status</th>
                                     <th>Order Date</th>
-                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -182,16 +127,6 @@ $totalPages = ceil($totalOrders / $limit);
                                                 <?php endif; ?>
                                             </td>
                                             <td><?= date('M d, Y h:i A', strtotime($order['order_date'])) ?></td>
-                                            <td>
-                                                <form method="post" class="d-inline">
-                                                    <input type="hidden" name="order_id" value="<?= $order['order_id'] ?>">
-                                                    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
-                                                        <option value="pending" <?= $order['status'] === 'pending' ? 'selected' : '' ?>>Pending</option>
-                                                        <option value="approved" <?= $order['status'] === 'approved' ? 'selected' : '' ?>>Approved</option>
-                                                        <option value="declined" <?= $order['status'] === 'declined' ? 'selected' : '' ?>>Declined</option>
-                                                    </select>
-                                                </form>
-                                            </td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php else: ?>

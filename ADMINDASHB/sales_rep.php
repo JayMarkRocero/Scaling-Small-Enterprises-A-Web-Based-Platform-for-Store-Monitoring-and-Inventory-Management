@@ -1,7 +1,7 @@
 <?php
 session_start();
 require_once '../DATABASE/db.php';
-require_once '../CLASSES/orders.php';
+include '../CLASSES/orders.php';
 
 $db = new Database();
 $conn = $db->getConnection();
@@ -42,21 +42,6 @@ while ($row = $salesReport->fetch_assoc()) {
     $totalTransactions += $row['quantity_sold']; 
 }
 
-// Calculate totals by status for the selected month and year
-$statusTotals = $conn->query("
-    SELECT status, SUM(total_price) as total
-    FROM sales
-    WHERE MONTH(sale_date) = $selectedMonth AND YEAR(sale_date) = $selectedYear
-    GROUP BY status
-");
-
-if ($statusTotals) {
-    while ($row = $statusTotals->fetch_assoc()) {
-        if ($row['status'] == 'Approved') $totalApproved = $row['total'];
-        if ($row['status'] == 'Pending') $totalPending = $row['total'];
-        if ($row['status'] == 'Declined') $totalDeclined = $row['total'];
-    }
-}
 
 $salesReport->free();
 $stmt->close();
@@ -71,47 +56,7 @@ $stmt->close();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
-        }
-        .sidebar {
-            min-height: 100vh;
-            background-color: #212529;
-            color: white;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        .sidebar-header {
-            padding: 20px 15px;
-            background-color: #111418;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-        .sidebar .nav-link {
-            color: rgba(255,255,255,0.8);
-            padding: 12px 20px;
-            transition: all 0.3s;
-        }
-        .sidebar .nav-link:hover, .sidebar .nav-link.active {
-            background-color: rgba(255,255,255,0.1);
-            color: white;
-        }
-        .sidebar .nav-link i {
-            margin-right: 10px;
-        }
-        .content {
-            padding: 30px;
-        }
-        .card {
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        canvas {
-            background: white;
-            border-radius: 8px;
-            padding: 10px;
-        }
-    </style>
+    <link rel="stylesheet" href="../ADMINDASHB/bootstrap.css">
 </head>
 <body>
 
@@ -160,8 +105,12 @@ $stmt->close();
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <h2>Sales Report</h2>
+                <a href="export_sales_pdf.php?month=<?= $selectedMonth ?>&year=<?= $selectedYear ?>" 
+                   class="btn btn-primary">
+                    <i class="bi bi-file-pdf"></i> Export to PDF
+                </a>
             </div>
-
+            
             <!-- Total Sales -->
             <div class="row mb-4">
                 <div class="col-md-6">
@@ -172,27 +121,11 @@ $stmt->close();
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="card bg-success text-white">
+                <div class="col-md-6">
+                    <div class="card bg-info text-white">
                         <div class="card-body">
-                            <h5 class="card-title">Approved Sales</h5>
-                            <h2 class="card-text">₱<?= number_format($totalApproved, 2) ?></h2>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card bg-warning text-dark">
-                        <div class="card-body">
-                            <h5 class="card-title">Pending Sales</h5>
-                            <h2 class="card-text">₱<?= number_format($totalPending, 2) ?></h2>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card bg-danger text-white">
-                        <div class="card-body">
-                            <h5 class="card-title">Declined Sales</h5>
-                            <h2 class="card-text">₱<?= number_format($totalDeclined, 2) ?></h2>
+                            <h5 class="card-title">Total Transactions</h5>
+                            <h2 class="card-text"><?= $totalTransactions ?></h2>
                         </div>
                     </div>
                 </div>
@@ -249,12 +182,12 @@ $stmt->close();
 
                 while ($row = $salesRecords->fetch_assoc()): ?>
                     <tr>
-                        <td><?= htmlspecialchars($row['id']) ?></td>
+                        <td><?= isset($row['id']) ? htmlspecialchars($row['id']) : '' ?></td>
                         <td><?= htmlspecialchars($row['product_name']) ?></td>
-                        <td><?= htmlspecialchars($row['category']) ?></td>
+                        <td><?= isset($row['category']) ? htmlspecialchars($row['category']) : '' ?></td>
                         <td><?= htmlspecialchars($row['quantity_sold']) ?></td>
                         <td>₱<?= number_format($row['total_price'], 2) ?></td>
-                        <td><?= htmlspecialchars($row['sale_date']) ?></td>
+                        <td><?= isset($row['sale_date']) ? htmlspecialchars($row['sale_date']) : '' ?></td>
                     </tr>
                 <?php endwhile; ?>
                 </tbody>
