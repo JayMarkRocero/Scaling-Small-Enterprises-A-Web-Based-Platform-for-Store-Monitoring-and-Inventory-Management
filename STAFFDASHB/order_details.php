@@ -11,28 +11,54 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-$stmt = $conn->prepare("CALL GetOrderDetailsByUser(?, ?)");
-if (!$stmt) {
-    die("Error preparing statement: " . $conn->error);
+$orderId = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$staffId = $_SESSION['user_id'];
+
+// Try to get staff name from users table, fallback to blank if not available
+$query = "SELECT 
+        o.order_id,
+        o.order_date,
+        o.status,
+        IFNULL(u.username, '') AS staff_name,
+        GROUP_CONCAT(
+            CONCAT(
+                p.product_name, '|',
+                oi.quantity, '|',
+                oi.total_price, '|',
+                p.price
+            ) SEPARATOR ';'
+        ) AS items
+    FROM orders o
+    LEFT JOIN users u ON o.user_id = u.user_id
+    JOIN order_items oi ON o.order_id = oi.order_id
+    JOIN products p ON oi.product_id = p.id
+    WHERE o.order_id = ? AND o.user_id = ?
+    GROUP BY o.order_id";
+
+$stmt = $conn->prepare($query);
+if ($stmt === false) {
+    die("Prepare failed: " . $conn->error);
 }
 $stmt->bind_param("ii", $orderId, $staffId);
-if (!$stmt->execute()) {
-    die("Error executing statement: " . $stmt->error);
-}
-$order = $stmt->get_result()->fetch_assoc();
+$stmt->execute();
+$result = $stmt->get_result();
+$order = $result->fetch_assoc();
 $stmt->close();
 
-$conn->next_result();
-$stmt = $conn->prepare("CALL GetOrderItemsByOrderId(?)");
-if (!$stmt) {
-    die("Error preparing statement: " . $conn->error);
+// Parse items for display
+$orderItems = [];
+if ($order && $order['items']) {
+    $itemRows = explode(';', $order['items']);
+    foreach ($itemRows as $row) {
+        list($product_name, $quantity, $total_price, $unit_price) = explode('|', $row);
+        $orderItems[] = [
+            'product_name' => $product_name,
+            'quantity' => $quantity,
+            'total_price' => $total_price,
+            'unit_price' => $unit_price
+        ];
+    }
 }
-$stmt->bind_param("i", $orderId);
-if (!$stmt->execute()) {
-    die("Error executing statement: " . $stmt->error);
-}
-$items = $stmt->get_result();
-$stmt->close();
 ?>
 
 <!DOCTYPE html>
@@ -94,16 +120,16 @@ $stmt->close();
                 <div class="row mb-4">
                     <div class="col-md-6">
                         <h5 class="text-muted">Order Information</h5>
-                        <p class="mb-1"><strong>Order ID:</strong> #<?= $order['order_id'] ?></p>
-                        <p class="mb-1"><strong>Date:</strong> <?= date('M d, Y h:i A', strtotime($order['order_date'])) ?></p>
-                        <p class="mb-1"><strong>Staff:</strong> <?= htmlspecialchars($order['staff_name']) ?></p>
+                        <p class="mb-1"><strong>Order ID:</strong> #<?= isset($order['order_id']) ? $order['order_id'] : '' ?></p>
+                        <p class="mb-1"><strong>Date:</strong> <?= isset($order['order_date']) ? date('M d, Y h:i A', strtotime($order['order_date'])) : '' ?></p>
+                        <p class="mb-1"><strong>Staff:</strong> <?= isset($order['staff_name']) ? htmlspecialchars($order['staff_name']) : '' ?></p>
                     </div>
                     <div class="col-md-6 text-md-end">
                         <h5 class="text-muted">Status</h5>
                         <span class="status-badge 
-                            <?= $order['status'] == 'Pending' ? 'status-pending' : 
-                                ($order['status'] == 'Approved' ? 'status-approved' : 'status-cancelled') ?>">
-                            <?= $order['status'] ?>
+                            <?= isset($order['status']) && $order['status'] == 'Pending' ? 'status-pending' : 
+                                (isset($order['status']) && $order['status'] == 'Approved' ? 'status-approved' : 'status-cancelled') ?>">
+                            <?= isset($order['status']) ? $order['status'] : '' ?>
                         </span>
                     </div>
                 </div>
@@ -121,7 +147,7 @@ $stmt->close();
                         <tbody>
                             <?php 
                             $grandTotal = 0;
-                            while ($item = $items->fetch_assoc()): 
+                            foreach ($orderItems as $item): 
                                 $grandTotal += $item['total_price'];
                             ?>
                                 <tr>
@@ -130,7 +156,7 @@ $stmt->close();
                                     <td><?= $item['quantity'] ?></td>
                                     <td>₱<?= number_format($item['total_price'], 2) ?></td>
                                 </tr>
-                            <?php endwhile; ?>
+                            <?php endforeach; ?>
                         </tbody>
                         <tfoot>
                             <tr>

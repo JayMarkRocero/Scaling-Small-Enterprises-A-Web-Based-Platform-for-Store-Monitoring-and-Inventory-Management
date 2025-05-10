@@ -142,7 +142,7 @@ $totalSales = getTotalSales();
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card total-sales-card" style="height: 130px; display: flex; justify-content: center; align-items: center;">
+        <div class="card bg-warning total-sales-card" style="height: 130px; display: flex; justify-content: center; align-items: center;">
             <div class="text-center">
                 <i class="bi bi-cash fs-4 d-block mb-1"></i>
                 <div class="card-title mb-0" style="font-size: 0.95rem;">Total Sales</div>
