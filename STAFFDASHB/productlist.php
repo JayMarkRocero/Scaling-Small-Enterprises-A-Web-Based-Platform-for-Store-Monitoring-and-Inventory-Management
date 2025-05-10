@@ -44,63 +44,7 @@ if ($lowStockOnly) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
-        }
-
-        .sidebar {
-            min-height: 100vh;
-            background-color: #212529;
-            color: white;
-        }
-
-        .sidebar-header {
-            padding: 20px 15px;
-            background-color: #111418;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-
-        .sidebar .nav-link {
-            color: rgba(255,255,255,0.8);
-            padding: 12px 20px;
-            transition: all 0.3s;
-        }
-
-        .sidebar .nav-link:hover, .sidebar .nav-link.active {
-            background-color: rgba(255,255,255,0.1);
-            color: white;
-        }
-
-        .sidebar .nav-link i {
-            margin-right: 10px;
-        }
-
-        .content {
-            padding: 30px;
-        }
-
-        .table-custom {
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .table-custom thead {
-            background-color: #f8f9fa;
-        }
-
-        .table-custom th {
-            border-bottom: 2px solid #dee2e6;
-            padding: 15px;
-        }
-
-        .table-custom td {
-            padding: 12px;
-            vertical-align: middle;
-        }
-    </style>
+    <link rel="stylesheet" href="../STAFFDASHB/productList.css">
 </head>
 <body>
 
