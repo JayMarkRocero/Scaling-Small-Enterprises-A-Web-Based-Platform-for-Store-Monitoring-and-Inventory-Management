@@ -14,12 +14,34 @@ if (isset($_POST['add_sale'])) {
     $product_id = $_POST['product_id'];
     $quantity_sold = $_POST['quantity_sold'];
 
-    $stmt = $conn->prepare("CALL AddSale(?, ?)");
-    $stmt->bind_param("ii", $product_id, $quantity_sold);
-    $stmt->execute();
-    $stmt->close();
+    // Start transaction
+    $conn->begin_transaction();
 
-    $showSuccess = true;
+    try {
+        // Prepare statement to add sale
+        $stmt = $conn->prepare("CALL AddSale(?, ?)");
+        $stmt->bind_param("ii", $product_id, $quantity_sold);
+        
+        if ($stmt->execute()) {
+            // Call the stored procedure to update product quantity
+            $updateStockStmt = $conn->prepare("CALL UpdateProductQuantity(?, ?)");
+            $updateStockStmt->bind_param("ii", $product_id, $quantity_sold);
+            if (!$updateStockStmt->execute()) {
+                throw new Exception("Failed to update stock: " . $updateStockStmt->error);
+            }
+            $updateStockStmt->close();
+
+            $showSuccess = true;
+        } else {
+            throw new Exception("Failed to add sale: " . $stmt->error);
+        }
+
+        $stmt->close();
+        $conn->commit(); 
+    } catch (Exception $e) {
+        $conn->rollback(); 
+        echo "Error: " . $e->getMessage(); 
+    }
 }
 
 // Fetch sales records using stored procedure
@@ -99,7 +121,6 @@ $salesList = $conn->query("CALL GetSalesList()");
                         <tr>
                             <th>Sale ID</th>
                             <th>Product</th>
-                            <th>Category</th>
                             <th>Quantity</th>
                             <th>Total Price</th>
                             <th>Date</th>
@@ -110,7 +131,6 @@ $salesList = $conn->query("CALL GetSalesList()");
                         <tr>
                             <td><?= $sale['id']; ?></td>
                             <td><?= htmlspecialchars($sale['product_name']); ?></td>
-                            <td><?= htmlspecialchars($sale['category']); ?></td>
                             <td><?= $sale['quantity_sold']; ?></td>
                             <td>₱<?= number_format($sale['total_price'], 2); ?></td>
                             <td><?= $sale['sale_date']; ?></td>
