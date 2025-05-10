@@ -34,58 +34,7 @@ $html = '
 <!DOCTYPE html>
 <html>
 <head>
-    <style>
-        @page { margin: 40px 30px 60px 30px; }
-        body { font-family: "DejaVu Sans", Arial, sans-serif; font-size: 12px; }
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .logo {
-            width: 80px;
-            margin-bottom: 10px;
-        }
-        h1 {
-            font-size: 24px;
-            margin: 0;
-            color: #2c3e50;
-        }
-        .subtitle {
-            font-size: 14px;
-            color: #555;
-            margin-bottom: 10px;
-        }
-        .summary {
-            margin-bottom: 20px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 10px;
-        }
-        th, td {
-            border: 1px solid #bbb;
-            padding: 8px 6px;
-            text-align: left;
-        }
-        th {
-            background-color: #2c3e50;
-            color: #fff;
-            font-size: 13px;
-        }
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-        .footer {
-            position: fixed;
-            bottom: -30px;
-            left: 0;
-            right: 0;
-            text-align: right;
-            font-size: 10px;
-            color: #888;
-        }
-    </style>
+    <link rel="stylesheet" href"../ADMINDASHB/exportSales.css">
 </head>
 <body>
     <div class="header">

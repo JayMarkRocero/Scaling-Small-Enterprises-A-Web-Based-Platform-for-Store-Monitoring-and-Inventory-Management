@@ -1,122 +1,75 @@
 <?php
 session_start();
+require_once '../DATABASE/db.php';
+
+$db = new Database();
+$conn = $db->getConnection();
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../LOGIN/login.php");
     exit;
 }
 
-$host = 'localhost';
-$user = 'root';
-$password = '';
-$dbname = 'inventory_database';
-
-$conn = new mysqli($host, $user, $password, $dbname);
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
 $staffId = $_SESSION['user_id'];
-$staffFullName = '';
-$staffUsername = '';
-$staffRole = '';
 
-$stmt = $conn->prepare("SELECT username, full_name, role_id FROM users WHERE user_id = ?");
-if ($stmt) {
-    $stmt->bind_param("i", $staffId);
-    $stmt->execute();
-    $stmt->bind_result($staffUsername, $staffFullName, $staffRole);
-    $stmt->fetch();
-    $stmt->close();
-} else {
-    die("Error in fetching staff info: " . $conn->error);
-}
-
-if (isset($_GET['logout'])) {
-    session_destroy();
-    header("Location: ../LOGIN/login.php");
-    exit;
-}
+// Get staff info
+$stmt = $conn->prepare("CALL getStaffInfo(?)");
+$stmt->bind_param("i", $staffId);
+$stmt->execute();
+$result = $stmt->get_result();
+$staffData = $result->fetch_assoc();
+$staffUsername = $staffData['username'];
+$staffFullName = $staffData['full_name'];
+$staffRole = $staffData['role_id'];
+$stmt->close();
+$conn->next_result();
 
 // Total Products
-$queryProducts = "SELECT COUNT(*) AS total_products FROM products";
-$resultProducts = $conn->query($queryProducts);
-if ($resultProducts) {
-    $rowProducts = $resultProducts->fetch_assoc();
-    $totalProducts = $rowProducts['total_products'] ?? 0;
-} else {
-    $totalProducts = 0;
-}
+$result = $conn->query("CALL countProducts()");
+$totalProducts = ($row = $result->fetch_assoc()) ? $row['total_products'] : 0;
+$conn->next_result();
 
 // Products Sold
-$querySold = "SELECT COALESCE(SUM(quantity_sold), 0) AS total_sold
-              FROM sales
-              WHERE staff_id = ?";
-$stmtSold = $conn->prepare($querySold);
-if ($stmtSold) {
-    $stmtSold->bind_param("i", $staffId);
-    $stmtSold->execute();
-    $resultSold = $stmtSold->get_result();
-    $rowSold = $resultSold->fetch_assoc();
-    $totalSold = $rowSold['total_sold'] ?? 0;
-    $stmtSold->close();
-} else {
-    $totalSold = 0;
-}
+$stmt = $conn->prepare("CALL totalSoldByStaff(?)");
+$stmt->bind_param("i", $staffId);
+$stmt->execute();
+$result = $stmt->get_result();
+$totalSold = ($row = $result->fetch_assoc()) ? $row['total_sold'] : 0;
+$stmt->close();
+$conn->next_result();
 
 // Stock on Hand
-$queryStock = "SELECT COALESCE(SUM(stock_quantity), 0) AS total_stock FROM products";
-$resultStock = $conn->query($queryStock);
-if ($resultStock) {
-    $rowStock = $resultStock->fetch_assoc();
-    $totalStock = $rowStock['total_stock'] ?? 0;
-} else {
-    $totalStock = 0;
-}
+$result = $conn->query("CALL totalStock()");
+$totalStock = ($row = $result->fetch_assoc()) ? $row['total_stock'] : 0;
+$conn->next_result();
 
-// Recent Activity (last 5 sales)
-$queryActivity = "SELECT s.sale_date, p.product_name, s.quantity_sold, s.total_price
-                  FROM sales s
-                  JOIN products p ON s.product_id = p.id
-                  WHERE s.staff_id = ?
-                  ORDER BY s.sale_date DESC LIMIT 5";
-$stmtActivity = $conn->prepare($queryActivity);
-$recentActivity = [];
-if ($stmtActivity) {
-    $stmtActivity->bind_param("i", $staffId);
-    $stmtActivity->execute();
-    $resultActivity = $stmtActivity->get_result();
-    while ($row = $resultActivity->fetch_assoc()) {
-        $recentActivity[] = $row;
-    }
-    $stmtActivity->close();
-}
+// Recent Activity
+$stmt = $conn->prepare("CALL recentActivity(?)");
+$stmt->bind_param("i", $staffId);
+$stmt->execute();
+$result = $stmt->get_result();
+$recentActivity = $result->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
+$conn->next_result();
 
-// Fetch current user data for the modal
-$userQuery = "SELECT username, full_name FROM users WHERE user_id = ?";
-$userStmt = $conn->prepare($userQuery);
-if (!$userStmt) {
-    die("Error preparing statement: " . $conn->error);
-}
-$userStmt->bind_param("i", $staffId);
-$userStmt->execute();
-$userResult = $userStmt->get_result();
-$userData = $userResult->fetch_assoc();
-
+// Fetch Profile
+$stmt = $conn->prepare("CALL getUserProfile(?)");
+$stmt->bind_param("i", $staffId);
+$stmt->execute();
+$result = $stmt->get_result();
+$userData = $result->fetch_assoc();
+$stmt->close();
 $conn->close();
 
+// Helper: Initials
 function getInitials($name) {
-    $words = explode(' ', trim($name));
-    $initials = '';
-    foreach ($words as $w) {
-        if ($w !== '') $initials .= strtoupper($w[0]);
-    }
-    return substr($initials, 0, 2);
+    return strtoupper(substr(implode('', array_map(fn($word) => $word[0], explode(' ', trim($name)))), 0, 2));
 }
 
-$profilePic = isset($userData['profile_pic']) && $userData['profile_pic'] ? $userData['profile_pic'] : null;
+$profilePic = $userData['profile_pic'] ?? null;
+$profilePicPath = $profilePic ? '../uploads/' . $profilePic : null;
+$absolutePath = $profilePic ? __DIR__ . '/../uploads/' . $profilePic : null;
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -125,95 +78,7 @@ $profilePic = isset($userData['profile_pic']) && $userData['profile_pic'] ? $use
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8f9fa;
-        }
-
-        .sidebar {
-            min-height: 100vh;
-            background-color: #212529;
-            color: white;
-        }
-
-        .sidebar-header {
-            padding: 20px 15px;
-            background-color: #111418;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-
-        .sidebar .nav-link {
-            color: rgba(255,255,255,0.8);
-            padding: 12px 20px;
-            transition: all 0.3s;
-        }
-
-        .sidebar .nav-link:hover, .sidebar .nav-link.active {
-            background-color: rgba(255,255,255,0.1);
-            color: white;
-        }
-
-        .sidebar .nav-link i {
-            margin-right: 10px;
-        }
-
-        .content {
-            padding: 30px;
-        }
-
-        .card-custom {
-            border-radius: 12px;
-            padding: 20px;
-            color: white;
-        }
-
-        .bg-primary-custom {
-            background-color: #2563eb;
-        }
-
-        .bg-success-custom {
-            background-color: #10b981;
-        }
-
-        .profile-card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        .stat-card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            transition: transform 0.3s;
-        }
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-        .activity-card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        .activity-item {
-            border-left: 3px solid #0d6efd;
-            padding-left: 15px;
-            margin-bottom: 15px;
-        }
-        .modal-content {
-            border-radius: 10px;
-        }
-        .modal-header {
-            background-color: #f8f9fa;
-            border-bottom: 1px solid #dee2e6;
-        }
-    </style>
+    <link rel="stylesheet" href="../STAFFDASHB/staffDashboard.css">
 </head>
 <body>
 
@@ -225,30 +90,11 @@ $profilePic = isset($userData['profile_pic']) && $userData['profile_pic'] ? $use
                 INVENTORY SYSTEM
             </div>
             <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link active" href="staff_dashboard.php">
-                        <i class="bi bi-speedometer2"></i> Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="productlist.php">
-                        <i class="bi bi-box"></i> Products
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="sales.php">
-                        <i class="bi bi-cart"></i> Sales
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="orders_staff.php">
-                        <i class="bi bi-bag-check"></i> My Orders</a>
-                </li>
-                <li class="nav-item mt-3">
-                    <a class="nav-link text-danger" href="../LOGIN/logout.php">
-                        <i class="bi bi-box-arrow-right"></i> Logout
-                    </a>
-                </li>
+                <li class="nav-item"><a class="nav-link active" href="staff_dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" href="productlist.php"><i class="bi bi-box"></i> Products</a></li>
+                <li class="nav-item"><a class="nav-link" href="sales.php"><i class="bi bi-cart"></i> Sales</a></li>
+                <li class="nav-item"><a class="nav-link" href="orders_staff.php"><i class="bi bi-bag-check"></i> My Orders</a></li>
+                <li class="nav-item mt-3"><a class="nav-link text-danger" href="../LOGIN/logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
             </ul>
         </div>
 
@@ -258,25 +104,10 @@ $profilePic = isset($userData['profile_pic']) && $userData['profile_pic'] ? $use
             <div class="d-flex justify-content-end align-items-center mb-3" style="height: 50px;">
                 <div class="dropdown">
                     <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <?php 
-                        $profilePicPath = $profilePic ? '../uploads/' . $profilePic : null;
-                        $absolutePath = $profilePic ? __DIR__ . '/../uploads/' . $profilePic : null;
-                        if ($profilePic && file_exists($absolutePath)): 
-                        ?>
-                            <img src="../uploads/yourfilename.jpg?t=<?= time() ?>" alt="Profile" 
-                                 style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
+                        <?php if ($profilePic && file_exists($absolutePath)): ?>
+                            <img src="<?= htmlspecialchars($profilePicPath) ?>?t=<?= time() ?>" alt="Profile" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
                         <?php else: ?>
-                            <div style="
-                                width: 40px; height: 40px;
-                                background: #0d6efd;
-                                color: #fff;
-                                border-radius: 50%;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                font-size: 1.2rem;
-                                font-weight: bold;
-                            ">
+                            <div style="width: 40px; height: 40px; background: #0d6efd; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold;">
                                 <?= getInitials($staffFullName) ?>
                             </div>
                         <?php endif; ?>
@@ -287,53 +118,46 @@ $profilePic = isset($userData['profile_pic']) && $userData['profile_pic'] ? $use
                     </ul>
                 </div>
             </div>
-            <!-- End Small Profile Icon -->
 
+            <!-- Dashboard Cards -->
             <div class="row">
-                <!-- Statistics Cards -->
-                <div class="col-md-12">
-                    <div class="row">
-                        <div class="col-md-4 mb-4">
-                            <div class="stat-card">
-                                <h6 class="text-muted">Total Products</h6>
-                                <h3><?= $totalProducts ?></h3>
-                                <i class="bi bi-box text-primary" style="font-size: 2rem;"></i>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-4">
-                            <div class="stat-card">
-                                <h6 class="text-muted">Products Sold</h6>
-                                <h3><?= $totalSold ?></h3>
-                                <i class="bi bi-cart-check text-success" style="font-size: 2rem;"></i>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-4">
-                            <div class="stat-card">
-                                <h6 class="text-muted">Stock on Hand</h6>
-                                <h3><?= $totalStock ?></h3>
-                                <i class="bi bi-box-seam text-warning" style="font-size: 2rem;"></i>
-                            </div>
-                        </div>
+                <div class="col-md-4 mb-4">
+                    <div class="stat-card">
+                        <h6 class="text-muted">Total Products</h6>
+                        <h3><?= $totalProducts ?></h3>
+                        <i class="bi bi-box text-primary" style="font-size: 2rem;"></i>
                     </div>
                 </div>
+                <div class="col-md-4 mb-4">
+                    <div class="stat-card">
+                        <h6 class="text-muted">Products Sold</h6>
+                        <h3><?= $totalSold ?></h3>
+                        <i class="bi bi-cart-check text-success" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="stat-card">
+                        <h6 class="text-muted">Stock on Hand</h6>
+                        <h3><?= $totalStock ?></h3>
+                        <i class="bi bi-box-seam text-warning" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
 
-                <!-- Recent Activity -->
-                <div class="col-12">
-                    <div class="activity-card">
-                        <h5 class="mb-4">Recent Activity</h5>
-                        <?php if (empty($recentActivity)): ?>
-                            <p class="text-muted">No recent activity</p>
-                        <?php else: ?>
-                            <?php foreach ($recentActivity as $activity): ?>
-                                <div class="activity-item">
-                                    <h6><?= htmlspecialchars($activity['product_name']) ?></h6>
-                                    <p class="mb-1">Sold <?= $activity['quantity_sold'] ?> units at ₱<?= number_format($activity['total_price'], 2) ?></p>
-                                    <small class="text-muted"><?= date('M d, Y h:i A', strtotime($activity['sale_date'])) ?></small>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </div>
-                </div>
+            <!-- Recent Activity -->
+            <div class="activity-card">
+                <h5 class="mb-4">Recent Activity</h5>
+                <?php if (empty($recentActivity)): ?>
+                    <p class="text-muted">No recent activity</p>
+                <?php else: ?>
+                    <?php foreach ($recentActivity as $activity): ?>
+                        <div class="activity-item">
+                            <h6><?= htmlspecialchars($activity['product_name']) ?></h6>
+                            <p class="mb-1">Sold <?= $activity['quantity_sold'] ?> units at ₱<?= number_format($activity['total_price'], 2) ?></p>
+                            <small class="text-muted"><?= date('M d, Y h:i A', strtotime($activity['sale_date'])) ?></small>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -343,152 +167,35 @@ $profilePic = isset($userData['profile_pic']) && $userData['profile_pic'] ? $use
 <div class="modal fade" id="viewProfileModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Profile Information</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
+            <div class="modal-header"><h5 class="modal-title">Profile Information</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <div class="modal-body">
                 <div class="text-center mb-4">
                     <div class="profile-picture-container" style="width: 150px; height: 150px; margin: 0 auto; position: relative;">
-                        <?php 
-                        $profilePicPath = $profilePic ? '../uploads/' . $profilePic : null;
-                        $absolutePath = $profilePic ? __DIR__ . '/../uploads/' . $profilePic : null;
-                        if ($profilePic && file_exists($absolutePath)): 
-                        ?>
-                            <img src="../uploads/yourfilename.jpg?t=<?= time() ?>" alt="Profile Picture"
-                                 style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                        <?php if ($profilePic && file_exists($absolutePath)): ?>
+                            <img src="<?= htmlspecialchars($profilePicPath) ?>?t=<?= time() ?>" alt="Profile Picture" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
                         <?php else: ?>
-                            <div style="
-                                width: 100%; 
-                                height: 100%; 
-                                background: #0d6efd;
-                                color: #fff;
-                                border-radius: 50%;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                font-size: 3rem;
-                                font-weight: bold;
-                            ">
+                            <div style="width: 100%; height: 100%; background: #0d6efd; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: bold;">
                                 <?= getInitials($staffFullName) ?>
                             </div>
                         <?php endif; ?>
-                        <label for="profilePicUpload" class="btn btn-sm btn-primary" 
-                               style="position: absolute; bottom: 0; right: 0; border-radius: 50%;">
+                        <label for="profilePicUpload" class="btn btn-sm btn-primary" style="position: absolute; bottom: 0; right: 0; border-radius: 50%;">
                             <i class="bi bi-camera"></i>
                         </label>
                         <input type="file" id="profilePicUpload" accept="image/*" style="display: none;">
                     </div>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Username</label>
-                    <p class="form-control-static"><?= htmlspecialchars($userData['username'] ?? '') ?></p>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Full Name</label>
-                    <p class="form-control-static"><?= htmlspecialchars($userData['full_name'] ?? '') ?></p>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Role</label>
-                    <p class="form-control-static">Staff</p>
-                </div>
+                <div class="mb-3"><label class="form-label fw-bold">Username</label><p class="form-control-static"><?= htmlspecialchars($userData['username'] ?? '') ?></p></div>
+                <div class="mb-3"><label class="form-label fw-bold">Full Name</label><p class="form-control-static"><?= htmlspecialchars($userData['full_name'] ?? '') ?></p></div>
+                <div class="mb-3"><label class="form-label fw-bold">Role</label><p class="form-control-static">Staff</p></div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div>
         </div>
     </div>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // Check for low stock products
-        const lowStockProducts = document.querySelectorAll('tr.table-warning');
-        if (lowStockProducts.length > 0) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Low Stock Alert',
-                html: `There are ${lowStockProducts.length} products with low stock levels. Please inform the administrator to restock these items.`,
-                confirmButtonText: 'View Products'
-            });
-        }
-    });
-
-    document.getElementById('profilePicUpload').addEventListener('change', function(e) {
-        if (this.files && this.files[0]) {
-            const formData = new FormData();
-            formData.append('profile_pic', this.files[0]);
-
-            // Show loading state
-            const uploadButton = this.previousElementSibling;
-            const originalHtml = uploadButton.innerHTML;
-            uploadButton.innerHTML = '<i class="bi bi-arrow-repeat spin"></i>';
-
-            fetch('upload_profile_pic.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Upload response:', data); // Debug log
-                
-                if (data.success) {
-                    // Show success message with debug info
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Success!',
-                        html: `${data.message}<br><br>Debug info:<br>${JSON.stringify(data.debug, null, 2)}`,
-                        timer: 3000,
-                        showConfirmButton: true
-                    }).then(() => {
-                        // Reload the page to show the new profile picture
-                        location.reload();
-                    });
-                } else {
-                    // Show error message with debug info
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        html: `${data.message}<br><br>Debug info:<br>${JSON.stringify(data.debug, null, 2)}`
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'An error occurred while uploading the profile picture.'
-                });
-            })
-            .finally(() => {
-                // Reset button state
-                uploadButton.innerHTML = originalHtml;
-                // Reset file input
-                this.value = '';
-            });
-        }
-    });
-
-    // Add spin animation for loading state
-    const style = document.createElement('style');
-    style.textContent = `
-        .spin {
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    `;
-    document.head.appendChild(style);
-</script>
+<script src="../STAFFDASHB/staffDashboard.js"></script>
 </body>
 </html>
+    

@@ -5,10 +5,10 @@ require_once '../DATABASE/db.php';
 $db = new Database();
 $conn = $db->getConnection();
 
-// Fetch product options for the modal dropdown
+// Fetch product options for dropdown
 $productOptions = $conn->query("SELECT id, product_name FROM products");
 
-// Handle modal form submission using stored procedure
+// Handle form submission
 $showSuccess = false;
 if (isset($_POST['add_sale'])) {
     $product_id = $_POST['product_id'];
@@ -19,21 +19,11 @@ if (isset($_POST['add_sale'])) {
     $stmt->execute();
     $stmt->close();
 
-    $conn->query("INSERT INTO sales (product_id, category, quantity_sold, total_price, sale_date) 
-                  VALUES ($product_id, $quantity_sold, $total_price, NOW())");
-
-    header("Location: sales.php?added_sale=1");
-    exit();
+    $showSuccess = true;
 }
 
-// Fetch sales records with category
-$salesList = $conn->query("
-    SELECT sales.id, products.product_name, categories.category_name AS category, sales.quantity_sold, sales.total_price, sales.sale_date 
-    FROM sales 
-    JOIN products ON sales.product_id = products.id 
-    JOIN categories ON products.category_id = categories.id 
-    ORDER BY sales.sale_date DESC
-");
+// Fetch sales records using stored procedure
+$salesList = $conn->query("CALL GetSalesList()");
 ?>
 
 <!DOCTYPE html>
@@ -46,34 +36,13 @@ $salesList = $conn->query("
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        .sidebar {
-            min-height: 100vh;
-            background-color: #212529;
-            color: white;
-        }
-        .sidebar-header {
-            padding: 20px 15px;
-            background-color: #111418;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-        .sidebar .nav-link {
-            color: rgba(255,255,255,0.8);
-            padding: 12px 20px;
-        }
-        .sidebar .nav-link:hover, .sidebar .nav-link.active {
-            background-color: rgba(255,255,255,0.1);
-            color: white;
-        }
-        .sidebar .nav-link i {
-            margin-right: 10px;
-        }
-        .content {
-            padding: 30px;
-        }
-        .table th, .table td {
-            vertical-align: middle;
-        }
+        .sidebar { min-height: 100vh; background-color: #212529; color: white; }
+        .sidebar-header { padding: 20px 15px; background-color: #111418; font-weight: bold; font-size: 1.2rem; }
+        .sidebar .nav-link { color: rgba(255,255,255,0.8); padding: 12px 20px; }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { background-color: rgba(255,255,255,0.1); color: white; }
+        .sidebar .nav-link i { margin-right: 10px; }
+        .content { padding: 30px; }
+        .table th, .table td { vertical-align: middle; }
     </style>
 </head>
 <body>
@@ -95,9 +64,7 @@ $salesList = $conn->query("
     <div class="row">
         <!-- Sidebar -->
         <div class="col-md-3 col-lg-2 d-md-block sidebar collapse">
-            <div class="sidebar-header">
-                INVENTORY SYSTEM
-            </div>
+            <div class="sidebar-header">INVENTORY SYSTEM</div>
             <ul class="nav flex-column">
                 <li class="nav-item">
                     <a class="nav-link" href="staff_dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a>
@@ -143,6 +110,7 @@ $salesList = $conn->query("
                         <tr>
                             <td><?= $sale['id']; ?></td>
                             <td><?= htmlspecialchars($sale['product_name']); ?></td>
+                            <td><?= htmlspecialchars($sale['category']); ?></td>
                             <td><?= $sale['quantity_sold']; ?></td>
                             <td>₱<?= number_format($sale['total_price'], 2); ?></td>
                             <td><?= $sale['sale_date']; ?></td>

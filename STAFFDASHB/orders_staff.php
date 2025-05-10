@@ -1,22 +1,15 @@
 <?php
 session_start();
+require_once '../DATABASE/db.php';
+
+$db = new Database();
+$conn = $db->getConnection();
+$staffId = $_SESSION['user_id'];
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../LOGIN/login.php");
     exit;
 }
-
-$host = 'localhost';
-$user = 'root';
-$password = '';
-$dbname = 'inventory_database';
-
-$conn = new mysqli($host, $user, $password, $dbname);
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-$staffId = $_SESSION['user_id'];
 
 // Handle AJAX requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
